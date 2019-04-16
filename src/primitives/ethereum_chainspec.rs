@@ -1,13 +1,14 @@
 use ethereum_types::{Address, U256};
 use ethsign::SecretKey;
+use hdwallet::mnemonic::{Language, Mnemonic};
 use serde_json;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use super::error::{Error, ErrorKind};
-use super::hdwallet::mnemonic::{Language, Mnemonic};
-use super::utils::{self, env_var::from_env};
+use crate::utils::{self, env_var::from_env};
+
+use super::error::Error;
 use super::{generate_keypair_with_index, ConsensusEngine};
 
 lazy_static! {
@@ -77,9 +78,7 @@ impl EthereumChainSpec {
         let balances = match raw_value.as_array() {
             Some(a) => a,
             None => {
-                return Err(Error::from(ErrorKind::InvalidAccountBalanceData(
-                    raw_value.to_string(),
-                )));
+                return Err(Error::InvalidAccountBalanceData(raw_value.to_string()));
             }
         };
 
@@ -125,7 +124,7 @@ impl EthereumChainSpec {
             let raw_value = from_env("GENESIS_BLOCK_GAS_LIMIT")?;
             match U256::from_str(utils::clean_0x(raw_value.as_str())) {
                 Ok(v) => v,
-                Err(_) => return Err(Error::from(ErrorKind::InvalidGasLimitValue(raw_value))),
+                Err(_) => return Err(Error::InvalidGasLimitValue(raw_value)),
             }
         };
 
@@ -238,7 +237,7 @@ impl EthereumChainSpec {
                     }
                 }
                 _ => {
-                    return Err(Error::from(ErrorKind::InvalidConsensusEngineType(engine)));
+                    return Err(Error::InvalidConsensusEngineType(engine));
                 }
             }
         };
@@ -421,9 +420,7 @@ pub fn keypair_from_sealer_mnemonic(
     let mnemonic = match Mnemonic::try_from(Language::English, sealer_mnemonic) {
         Ok(m) => m,
         Err(_) => {
-            return Err(Error::from(ErrorKind::InvalidMnemonicPhrase(
-                sealer_mnemonic.clone(),
-            )));
+            return Err(Error::InvalidMnemonicPhrase(sealer_mnemonic.clone()));
         }
     };
 

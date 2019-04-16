@@ -1,8 +1,6 @@
 #![recursion_limit = "128"]
 
 #[macro_use]
-extern crate error_chain;
-#[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate clap;
@@ -18,11 +16,8 @@ extern crate toml;
 #[macro_use]
 extern crate tower_web;
 
-use hdwallet;
-
-#[cfg(test)]
 #[macro_use]
-extern crate assert_matches;
+extern crate failure;
 
 mod bootnode;
 mod cli;

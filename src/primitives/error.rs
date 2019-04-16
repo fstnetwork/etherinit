@@ -1,64 +1,70 @@
-error_chain! {
-    foreign_links {
-        StdIoError(std::io::Error);
-        EnvVarError(super::utils::env_var::Error);
-        NumParseIntError(std::num::ParseIntError);
-        AddrParseError(std::net::AddrParseError);
-        JsonParseError(serde_json::Error);
-    }
+use crate::utils::env_var::Error as EnvVarError;
 
-    errors {
-        UnknownNodeType(t: String) {
-            description("Unknown node type")
-            display("Unknown node type: {}", t)
-        }
-        TooLargeMinerIndex(miner_index: usize, miner_count: usize) {
-            description("Too large miner index")
-            display("Too larget miner index: {}, miner count: {}", miner_index, miner_count)
-        }
-        InvalidSealerMasterSeed(s: String) {
-            description("Invalid sealer master seed")
-            display("Invalid sealer master seed: {}", s)
-        }
-        InvalidMinerCount(s: String) {
-            description("Invalid miner count")
-            display("Invalid miner count: {}", s)
-        }
-        InvalidMinerIndex(s: String) {
-            description("Invalid miner index")
-            display("Invalid miner index: {}", s)
-        }
-        InvalidConsensusEngineType(s: String) {
-            description("Invalid consensus engine type")
-            display("Invalid consensus engine type: {}", s)
-        }
-        InvalidEthereumProgramName(n: String) {
-            description("Invalid Ethereum program name")
-            display("Invalid Ethereum program name: {}", n)
-        }
-        InvalidGasLimitValue(s: String) {
-            description("Invalid gas limit value")
-            display("Invalid gas limit value: {}", s)
-        }
-        InvalidPrivateKey(s: String) {
-            description("Invalid private key")
-            display("Invalid private key: {}", s)
-        }
-        InvalidHDPath(s: String) {
-            description("Invalid HD path")
-            display("Invalid HD path: {}", s)
-        }
-        InvalidMnemonicPhrase(phrase: String) {
-            description("Invalid mnemonic phrase")
-            display("Invalid mnemonic phrase {}", phrase)
-        }
-        FailedToGeneratePrivateKey(seed: Vec<u8>, path: String) {
-            description("Failed to generate private key")
-            display("Failed to generate private key from seed {:?} and path {}", seed, path)
-        }
-        InvalidAccountBalanceData(data: String) {
-            description("Invalid account balance data")
-            display("Invalid account balance data: {:?}", data)
-        }
+#[derive(Debug, Fail)]
+pub enum Error {
+    #[fail(display = "Io error: {}", _0)]
+    StdIo(std::io::Error),
+
+    #[fail(display = "Parse integration error: {}", _0)]
+    NumParseInt(std::num::ParseIntError),
+
+    #[fail(display = "JSON error: {}", _0)]
+    SerdeJson(serde_json::Error),
+
+    #[fail(display = "EthSign error: {}", _0)]
+    EthSign(ethsign::Error),
+
+    #[fail(display = "Invalid environment error = {:?}", _0)]
+    EnvVar(EnvVarError),
+
+    #[fail(display = "Invalid Ethereum program name: {}", _0)]
+    InvalidEthereumProgramName(String),
+
+    #[fail(display = "Invalid mnemonic phrase {}", _0)]
+    InvalidMnemonicPhrase(String),
+
+    #[fail(display = "Invalid consensus engine type: {}", _0)]
+    InvalidConsensusEngineType(String),
+
+    #[fail(display = "Invalid gas limit value: {}", _0)]
+    InvalidGasLimitValue(String),
+
+    #[fail(display = "Invalid account balance data: {}", _0)]
+    InvalidAccountBalanceData(String),
+
+    #[fail(
+        display = "Failed to generate private key from seed {:?} and path {}",
+        seed, path
+    )]
+    FailedToGeneratePrivateKey { seed: Vec<u8>, path: String },
+}
+
+impl From<std::io::Error> for Error {
+    fn from(error: std::io::Error) -> Error {
+        Error::StdIo(error)
+    }
+}
+
+impl From<std::num::ParseIntError> for Error {
+    fn from(error: std::num::ParseIntError) -> Error {
+        Error::NumParseInt(error)
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(error: serde_json::Error) -> Error {
+        Error::SerdeJson(error)
+    }
+}
+
+impl From<ethsign::Error> for Error {
+    fn from(error: ethsign::Error) -> Error {
+        Error::EthSign(error)
+    }
+}
+
+impl From<EnvVarError> for Error {
+    fn from(error: EnvVarError) -> Error {
+        Error::EnvVar(error)
     }
 }

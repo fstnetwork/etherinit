@@ -1,4 +1,4 @@
-use super::primitives::EthereumChainSpec;
+use crate::primitives::EthereumChainSpec;
 
 pub fn generate_chainspec() -> i32 {
     let spec = match EthereumChainSpec::from_env() {

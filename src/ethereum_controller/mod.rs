@@ -1,10 +1,8 @@
-use super::ethereum_launcher;
-
 mod controller;
 mod error;
 
 pub use self::controller::Controller as EthereumController;
-pub use self::error::{Error, ErrorKind};
+pub use self::error::Error;
 
 #[derive(Debug, Copy, Clone)]
 #[allow(dead_code)]

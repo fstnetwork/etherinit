@@ -3,7 +3,8 @@ use ethsign::{keyfile::KeyFile, Protected, SecretKey};
 use std::io::Write;
 use std::path::PathBuf;
 
-use super::primitives::{EthereumNodeUrl, NodeRole};
+use crate::primitives::{EthereumNodeUrl, NodeRole};
+
 use super::Error;
 
 pub fn create_key_directory(config_dir_path: &PathBuf) -> Result<PathBuf, Error> {

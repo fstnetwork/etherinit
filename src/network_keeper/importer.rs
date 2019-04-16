@@ -1,7 +1,8 @@
 use futures::{sync::mpsc, Async, Future, Poll, Stream};
 use std::collections::HashSet;
 
-use super::primitives::{EthereumNodeUrl, EthereumProgram};
+use crate::primitives::{EthereumNodeUrl, EthereumProgram};
+
 use super::{BootnodeClient, Error, Web3};
 
 type PeerFetcher = Box<dyn Future<Item = Vec<EthereumNodeUrl>, Error = Error> + Send>;

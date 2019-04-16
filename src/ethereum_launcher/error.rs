@@ -1,12 +1,38 @@
-error_chain! {
-    foreign_links {
-        StdIo(std::io::Error);
-        SerdeJson(serde_json::Error);
-        Primitives(super::primitives::Error);
-        EthSign(ethsign::Error);
+#[derive(Debug, Fail)]
+pub enum Error {
+    #[fail(display = "Io error: {}", _0)]
+    StdIo(std::io::Error),
+
+    #[fail(display = "JSON error: {}", _0)]
+    SerdeJson(serde_json::Error),
+
+    #[fail(display = "EthSign error: {}", _0)]
+    EthSign(ethsign::Error),
+
+    #[fail(display = "Primitives error: {}", _0)]
+    Primitives(crate::primitives::Error),
+}
+
+impl From<std::io::Error> for Error {
+    fn from(error: std::io::Error) -> Error {
+        Error::StdIo(error)
     }
+}
 
-    errors {
+impl From<serde_json::Error> for Error {
+    fn from(error: serde_json::Error) -> Error {
+        Error::SerdeJson(error)
+    }
+}
 
+impl From<ethsign::Error> for Error {
+    fn from(error: ethsign::Error) -> Error {
+        Error::EthSign(error)
+    }
+}
+
+impl From<crate::primitives::Error> for Error {
+    fn from(error: crate::primitives::Error) -> Error {
+        Error::Primitives(error)
     }
 }

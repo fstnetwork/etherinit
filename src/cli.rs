@@ -1,6 +1,6 @@
 use clap::{App, SubCommand};
 
-use super::commands::Command;
+use crate::commands::Command;
 
 pub struct Cli(App<'static, 'static>);
 

@@ -3,11 +3,11 @@ use hyper::{Body, Client as HyperClient, Request, Uri};
 use serde_json::Value as JsonValue;
 use std::str::FromStr;
 
-use super::primitives::{self, EthereumNodeUrl, EthereumSystemInfo};
+use crate::primitives::{EthereumNodeUrl, EthereumSystemInfo};
 
 mod error;
 
-pub use self::error::{Error, ErrorKind};
+pub use self::error::Error;
 
 #[derive(Debug, Clone)]
 pub struct Client {

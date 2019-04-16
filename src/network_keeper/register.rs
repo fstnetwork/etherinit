@@ -1,7 +1,8 @@
 use futures::{sync::mpsc, Async, Future, Poll, Stream};
 use std::str::FromStr;
 
-use super::primitives::{EthereumNodeUrl, EthereumProgram};
+use crate::primitives::{EthereumNodeUrl, EthereumProgram};
+
 use super::{BootnodeClient, Error, Web3};
 
 type UrlFetcher = Box<dyn Future<Item = EthereumNodeUrl, Error = Error> + Send>;

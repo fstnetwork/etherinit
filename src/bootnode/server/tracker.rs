@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 use tokio::timer::Interval;
 
-use super::primitives::{EthereumChainSpec, EthereumNodeUrl, EthereumSystemInfo};
+use crate::primitives::{EthereumChainSpec, EthereumNodeUrl, EthereumSystemInfo};
 
 const MINIMUM_NODE_LIFETIME: Duration = Duration::from_secs(60);
 

@@ -5,10 +5,10 @@ mod error;
 mod importer;
 mod register;
 
-pub use self::error::{Error, ErrorKind};
+pub use self::error::Error;
 
-use super::bootnode::{self, BootnodeClient};
-use super::primitives::{self, EthereumProgram};
+use crate::bootnode::BootnodeClient;
+use crate::primitives::EthereumProgram;
 
 use self::importer::Importer;
 use self::register::Register;

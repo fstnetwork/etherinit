@@ -4,13 +4,13 @@ use std::path::PathBuf;
 use std::process::Command;
 use tokio_process::{Child as ChildProcess, CommandExt};
 
-use super::primitives::{self, EthereumNodeUrl, EthereumProgram, NodeRole};
+use crate::primitives::{EthereumNodeUrl, EthereumProgram, NodeRole};
 
 mod error;
 mod geth;
 mod parity;
 
-pub use self::error::{Error, ErrorKind};
+pub use self::error::Error;
 
 const PARITY_EXECUTABLE_PATH: &'static str = "parity";
 const GETH_EXECUTABLE_PATH: &'static str = "geth";

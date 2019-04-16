@@ -5,16 +5,14 @@ use tokio_signal::unix as UnixSignal;
 use tokio_timer::Interval;
 
 use self::context::Context;
-pub use self::error::{Error, ErrorKind};
-pub use super::utils;
+pub use self::error::Error;
 
-use super::bootnode::BootnodeClient;
-use super::ethereum_controller::{self, EthereumController};
-use super::ethereum_launcher::EthereumLauncher;
-use super::hdwallet;
-use super::network_keeper::{self, NetworkKeeper};
-use super::primitives::{self, EthereumNodeUrl, EthereumProgram};
-use super::utils::RetryFuture;
+use crate::bootnode::BootnodeClient;
+use crate::ethereum_controller::EthereumController;
+use crate::ethereum_launcher::EthereumLauncher;
+use crate::network_keeper::NetworkKeeper;
+use crate::primitives::{EthereumNodeUrl, EthereumProgram};
+use crate::utils::RetryFuture;
 
 mod context;
 mod error;
@@ -121,7 +119,7 @@ pub fn fetch_initial_data(
                                 return Ok(info.consensus_engine.program());
                             }
                             Err(_err) => {
-                                return Err(Error::from(ErrorKind::FailedToFetchSystemInfo));
+                                return Err(Error::FailedToFetchSystemInfo);
                             }
                         }),
                 )
@@ -142,9 +140,7 @@ pub fn fetch_initial_data(
                         .fetch_chainspec(&network_name)
                         .then(|data| match data {
                             Ok(spec) => return Ok(spec),
-                            Err(_err) => {
-                                return Err(Error::from(ErrorKind::FailedToFetchChainSpec))
-                            }
+                            Err(_err) => return Err(Error::FailedToFetchChainSpec),
                         }),
                 )
             }
@@ -168,14 +164,14 @@ pub fn fetch_initial_data(
                                 (0, true) => return Ok(vec![]),
                                 (0, false) => {
                                     info!("No node fetched, try again later...");
-                                    return Err(Error::from(ErrorKind::FailedToFetchPeers));
+                                    return Err(Error::FailedToFetchPeers);
                                 }
                                 _ => {
                                     info!("{} node(s) fetched", nodes.len());
                                     return Ok(nodes);
                                 }
                             },
-                            Err(_err) => return Err(Error::from(ErrorKind::FailedToFetchPeers)),
+                            Err(_err) => return Err(Error::FailedToFetchPeers),
                         }),
                 )
             }

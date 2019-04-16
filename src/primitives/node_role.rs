@@ -1,6 +1,6 @@
 use ethsign::SecretKey;
 
-use super::hdwallet::mnemonic::Mnemonic;
+use hdwallet::mnemonic::Mnemonic;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum NodeRole {

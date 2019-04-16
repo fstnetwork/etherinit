@@ -1,10 +1,11 @@
+use hdwallet::mnemonic::{Language, Mnemonic};
 use std::time::Duration;
 
-use super::ethereum_controller::RestartPolicy;
-use super::hdwallet::mnemonic::{Language, Mnemonic};
-use super::primitives::NodeRole;
-use super::utils::env_var::from_env;
-use super::{Error, ErrorKind};
+use crate::ethereum_controller::RestartPolicy;
+use crate::primitives::NodeRole;
+use crate::utils::env_var::from_env;
+
+use super::Error;
 
 #[derive(Debug, Clone)]
 pub struct Context {
@@ -56,7 +57,7 @@ impl Context {
                     let mnemonic = match Mnemonic::try_from(Language::English, seed.as_str()) {
                         Ok(m) => m,
                         Err(_err) => {
-                            return Err(Error::from(ErrorKind::InvalidMnemonicPhrase(seed)));
+                            return Err(Error::InvalidMnemonicPhrase(seed));
                         }
                     };
 
@@ -65,7 +66,7 @@ impl Context {
                         index,
                     }
                 }
-                _ => return Err(Error::from(ErrorKind::UnknownNodeRole(node_role))),
+                _ => return Err(Error::UnknownNodeRole(node_role)),
             }
         };
 

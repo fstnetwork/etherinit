@@ -1,7 +1,8 @@
 use parking_lot::Mutex;
 use std::sync::Arc;
 
-use super::primitives::EthereumNodeUrl;
+use crate::primitives::EthereumNodeUrl;
+
 use super::Tracker;
 
 pub struct Service {

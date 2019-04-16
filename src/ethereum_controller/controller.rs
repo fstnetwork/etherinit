@@ -1,7 +1,8 @@
 use futures::{sync::oneshot, Async, Future, Poll};
 use tokio_process::Child as ChildProcess;
 
-use super::ethereum_launcher::EthereumLauncher;
+use crate::ethereum_launcher::EthereumLauncher;
+
 use super::{Error, RestartPolicy};
 
 pub struct Controller {

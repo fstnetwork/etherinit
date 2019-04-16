@@ -7,7 +7,7 @@ type FutureCreator<Out, Error> = Box<dyn Fn() -> Task<Out, Error> + Send + 'stat
 
 enum Inner<Out, Error>
 where
-    Error: ::std::error::Error,
+    Error: ::std::fmt::Display,
 {
     WaitForRetry { delay: Delay },
     Retrying { task: Task<Out, Error> },
@@ -15,7 +15,7 @@ where
 
 impl<Out, Error> Inner<Out, Error>
 where
-    Error: ::std::error::Error,
+    Error: ::std::fmt::Display,
 {
     fn wait(delay: Duration) -> Self {
         Inner::WaitForRetry {
@@ -30,7 +30,7 @@ where
 
 pub struct RetryFuture<Out, Error>
 where
-    Error: ::std::error::Error,
+    Error: ::std::fmt::Display,
 {
     action_title: Option<String>,
     retry_interval: Duration,
@@ -42,7 +42,7 @@ where
 
 impl<Out, Error> RetryFuture<Out, Error>
 where
-    Error: ::std::error::Error,
+    Error: ::std::fmt::Display,
 {
     pub fn new(
         action_title: Option<String>,
@@ -69,7 +69,7 @@ where
 
 impl<Out, Error> Future for RetryFuture<Out, Error>
 where
-    Error: ::std::error::Error,
+    Error: ::std::fmt::Display,
 {
     type Item = Out;
     type Error = Error;

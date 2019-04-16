@@ -3,20 +3,12 @@ use std::str::FromStr;
 use std::time::Duration;
 use tokio::runtime::Runtime;
 
-use super::network_keeper::NetworkKeeper;
-use super::primitives::EthereumProgram;
-use super::utils::env_var::from_env;
+use crate::network_keeper::NetworkKeeper;
+use crate::primitives::EthereumProgram;
+use crate::utils::env_var::from_env;
 
-error_chain! {
-    foreign_links {
-        StdIo(std::io::Error);
-        StdNum(std::num::ParseIntError);
-        EnvVar(super::utils::env_var::Error);
-        Primitives(super::primitives::Error);
-        NetworkKeeper(super::network_keeper::Error);
-        Timer(tokio::timer::Error);
-    }
-}
+mod error;
+pub use self::error::Error;
 
 #[derive(Debug, Clone)]
 struct Context {
@@ -28,7 +20,7 @@ struct Context {
 }
 
 impl Context {
-    fn from_env() -> Result<Context> {
+    fn from_env() -> Result<Context, Error> {
         let network_name = from_env("NETWORK_NAME")?;
 
         let ethereum_program = EthereumProgram::from_str(from_env("ETHEREUM_PROGRAM")?.as_str())?;

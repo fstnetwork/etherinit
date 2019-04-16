@@ -1,8 +1,9 @@
 use ethereum_types::{Address, U256};
 
-use super::EthereumProgram;
+use crate::primitives::EthereumProgram;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum ConsensusEngine {
     Ethash {
         genesis_difficulty: U256,
