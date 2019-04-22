@@ -102,17 +102,17 @@ impl Future for NetworkKeeper {
 
         match self.event_receiver.poll() {
             Ok(Async::Ready(Some(event))) => match event {
-                Event::Shutdown => return Ok(Async::Ready(())),
+                Event::Shutdown => Ok(Async::Ready(())),
                 Event::ImportPeers => {
                     self.importer.import();
-                    return Ok(Async::NotReady);
+                    Ok(Async::NotReady)
                 }
                 Event::RegisterEthereumNode => {
                     self.register.update();
-                    return Ok(Async::NotReady);
+                    Ok(Async::NotReady)
                 }
             },
-            _ => return Ok(Async::NotReady),
+            _ => Ok(Async::NotReady),
         }
     }
 }

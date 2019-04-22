@@ -11,7 +11,7 @@ pub struct Service {
 
 impl Service {
     pub fn with_tracker(tracker: Arc<Mutex<Tracker>>) -> Service {
-        Service { tracker: tracker }
+        Service { tracker }
     }
 }
 
@@ -85,7 +85,7 @@ impl Service {
             Some(network) => Ok(network
                 .chainspec()
                 .validators()
-                .unwrap_or(vec![])
+                .unwrap_or_else(||vec![])
                 .iter()
                 .map(|miner| format!("{:?}", miner))
                 .collect()),
@@ -103,11 +103,12 @@ impl Service {
         ) {
             (Some(e), Ok(url)) => {
                 e.update_node(url.clone());
-                return Ok(url.to_string());
+                Ok(url.to_string())
             }
-            _ => {}
+            _ => {
+                Ok(String::new())
+            }
         }
-        Ok(String::new())
     }
 }
 }

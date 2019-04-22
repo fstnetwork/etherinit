@@ -42,13 +42,14 @@ impl EthereumNetwork {
 
     #[inline]
     pub fn nodes(&self) -> impl Iterator<Item = &EthereumNodeUrl> {
-        self.nodes.keys().into_iter()
+        self.nodes.keys()
     }
 
     pub fn drain_outdated_nodes(&mut self) {
-        let node_lifetime = match self.node_lifetime < MINIMUM_NODE_LIFETIME {
-            true => MINIMUM_NODE_LIFETIME,
-            false => self.node_lifetime,
+        let node_lifetime = if self.node_lifetime < MINIMUM_NODE_LIFETIME {
+            MINIMUM_NODE_LIFETIME
+        } else {
+            self.node_lifetime
         };
 
         let now = Instant::now();
@@ -112,7 +113,7 @@ impl Tracker {
     }
 
     #[allow(dead_code)]
-    pub fn with_chainspecs(specs: &Vec<EthereumChainSpec>, node_lifetime: Duration) -> Tracker {
+    pub fn with_chainspecs(specs: &[EthereumChainSpec], node_lifetime: Duration) -> Tracker {
         let mut tracker = Tracker::new();
         specs
             .iter()
@@ -139,7 +140,7 @@ impl Tracker {
     }
 
     #[allow(unused)]
-    pub fn remove_ethereum_network(&mut self, network_name: &String) {
+    pub fn remove_ethereum_network(&mut self, network_name: &str) {
         self.ethereum.remove(network_name);
     }
 }

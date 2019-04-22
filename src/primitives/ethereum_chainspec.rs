@@ -59,7 +59,7 @@ impl EthereumChainSpec {
         let keypairs = keypair_from_sealer_mnemonic(&seed, miner_count)?;
         let validators = keypairs
             .iter()
-            .map(|sec| Address::from(sec.public().address().clone()))
+            .map(|sec| Address::from(*sec.public().address()))
             .collect();
         Ok(validators)
     }
@@ -83,7 +83,7 @@ impl EthereumChainSpec {
         };
 
         Ok(balances
-            .into_iter()
+            .iter()
             .fold(HashMap::default(), |mut balances, account| {
                 let account = match account.as_object() {
                     Some(acc) => acc,
@@ -134,10 +134,10 @@ impl EthereumChainSpec {
             use serde_json::Value as JsonValue;
             let sealer_intrinsic_balance = U256::from_dec_str(
                 from_env("SEALER_INTRINSIC_BALANCE")
-                    .unwrap_or("0".into())
+                    .unwrap_or_else(|_| "0".into())
                     .as_str(),
             )
-            .unwrap_or(U256::from(0));
+            .unwrap_or_default();
 
             let engine = from_env("CONSENSUS_ENGINE")?;
             match engine.to_lowercase().as_ref() {
@@ -158,7 +158,7 @@ impl EthereumChainSpec {
                     let block_reward = U256::from_dec_str(
                         engine_parameters["blockReward"]
                             .as_str()
-                            .unwrap_or("5000000000000000000".into()),
+                            .unwrap_or_else(|| "5000000000000000000"),
                     )
                     .unwrap_or(U256::from(5) * U256::from(10).pow(18.into()));
 
@@ -194,7 +194,7 @@ impl EthereumChainSpec {
                     let block_reward = U256::from_dec_str(
                         engine_parameters["blockReward"]
                             .as_str()
-                            .unwrap_or("5000000000000000000".into()),
+                            .unwrap_or_else(|| "5000000000000000000"),
                     )
                     .unwrap_or(U256::from(5) * U256::from(10).pow(18.into()));
 
@@ -220,7 +220,7 @@ impl EthereumChainSpec {
                     let block_reward = U256::from_dec_str(
                         engine_parameters["blockReward"]
                             .as_str()
-                            .unwrap_or("5000000000000000000".into()),
+                            .unwrap_or_else(|| "5000000000000000000"),
                     )
                     .unwrap_or(U256::from(5) * U256::from(10).pow(18.into()));
 
@@ -414,13 +414,13 @@ impl EthereumChainSpec {
 }
 
 pub fn keypair_from_sealer_mnemonic(
-    sealer_mnemonic: &String,
+    sealer_mnemonic: &str,
     sealer_count: usize,
 ) -> Result<Vec<SecretKey>, Error> {
     let mnemonic = match Mnemonic::try_from(Language::English, sealer_mnemonic) {
         Ok(m) => m,
         Err(_) => {
-            return Err(Error::InvalidMnemonicPhrase(sealer_mnemonic.clone()));
+            return Err(Error::InvalidMnemonicPhrase(sealer_mnemonic.to_owned()));
         }
     };
 

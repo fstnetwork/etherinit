@@ -18,9 +18,9 @@ pub fn create_key_directory(config_dir_path: &PathBuf) -> Result<PathBuf, Error>
 pub fn create_key_file(
     key_dir_path: &PathBuf,
     private_key: &SecretKey,
-    passphrase: &String,
+    passphrase: &str,
 ) -> Result<PathBuf, Error> {
-    let passphrase = Protected::from(passphrase.as_bytes().clone());
+    let passphrase = Protected::from(passphrase.as_bytes());
     let keyfile = KeyFile {
         id: "6845de15-c9d1-4af6-8386-da01205284d7".to_owned(),
         version: 3,
@@ -47,7 +47,7 @@ pub fn create_key_file(
     Ok(path)
 }
 
-pub fn create_passphrase_file(config_dir: &PathBuf, passphrase: &String) -> Result<PathBuf, Error> {
+pub fn create_passphrase_file(config_dir: &PathBuf, passphrase: &str) -> Result<PathBuf, Error> {
     let mut path = PathBuf::from(config_dir);
     path.push("sealer_passphrase");
 
@@ -55,14 +55,14 @@ pub fn create_passphrase_file(config_dir: &PathBuf, passphrase: &String) -> Resu
         .write(true)
         .create(true)
         .open(path.clone())?
-        .write(passphrase.as_bytes())?;
+        .write_all(passphrase.as_bytes())?;
 
     Ok(path)
 }
 
 pub fn create_reserverd_peers_file(
     config_dir: &PathBuf,
-    bootnodes: &Vec<EthereumNodeUrl>,
+    bootnodes: &[EthereumNodeUrl],
 ) -> Result<PathBuf, Error> {
     let mut path = PathBuf::from(config_dir);
     path.push("reserved_peers");
@@ -214,7 +214,7 @@ impl ParityConfig {
                     force_sealing = force_sealing
                     gas_floor_target = "3000000000"
                     gas_cap = "3100000000"
-                    tx_queue_size = 1000000
+                    tx_queue_size = 1_000_000
                     tx_queue_mem_limit = 0
                     tx_queue_per_sender = 50000
                     tx_gas_limit = tx_gas_limit
@@ -267,7 +267,7 @@ impl ParityConfig {
                     max_pending_peers = 32
 
                     [mining]
-                    tx_queue_size = 1000000
+                    tx_queue_size = 1_000_000
                     tx_queue_mem_limit = 0
                     tx_queue_per_sender = 50000
 

@@ -87,7 +87,7 @@ impl Context {
             bootnode_service_port: from_env("BOOTNODE_SERVICE_PORT")?.parse()?,
             bootnode_update_interval: Duration::from_secs(
                 from_env("BOOTNODE_SERVICE_UPDATE_INTERVAL")
-                    .unwrap_or("5".into())
+                    .unwrap_or_else(|_| "5".into())
                     .parse()?,
             ),
 
@@ -98,7 +98,7 @@ impl Context {
     #[inline]
     pub fn is_first_miner(&self) -> bool {
         match self.node_role {
-            NodeRole::Miner { index, .. } => return 0 == index,
+            NodeRole::Miner { index, .. } => 0 == index,
             NodeRole::Transactor => false,
             NodeRole::Syncer => false,
         }

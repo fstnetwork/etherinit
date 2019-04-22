@@ -12,9 +12,9 @@ mod parity;
 
 pub use self::error::Error;
 
-const PARITY_EXECUTABLE_PATH: &'static str = "parity";
-const GETH_EXECUTABLE_PATH: &'static str = "geth";
-const DEFAULT_SEALER_KEYFILE_PASSPHRASE: &'static str = "0123456789";
+const PARITY_EXECUTABLE_PATH: &str = "parity";
+const GETH_EXECUTABLE_PATH: &str = "geth";
+const DEFAULT_SEALER_KEYFILE_PASSPHRASE: &str = "0123456789";
 
 pub struct EthereumLauncher {
     pub program: EthereumProgram,
@@ -32,11 +32,11 @@ pub struct EthereumLauncher {
 
 impl EthereumLauncher {
     pub fn chain_data_dir_path(&self) -> PathBuf {
-        PathBuf::from(std::env::var("CHAIN_DATA_ROOT").unwrap_or("/chain-data".into()))
+        PathBuf::from(std::env::var("CHAIN_DATA_ROOT").unwrap_or_else(|_| "/chain-data".into()))
     }
 
     pub fn config_dir_path(&self) -> PathBuf {
-        let mut path = PathBuf::from(std::env::var("CONFIG_ROOT").unwrap_or("/".into()));
+        let mut path = PathBuf::from(std::env::var("CONFIG_ROOT").unwrap_or_else(|_| "/".into()));
         path.push(match self.program {
             EthereumProgram::Parity => PathBuf::from("parity-config"),
             EthereumProgram::GoEthereum => PathBuf::from("geth-config"),
@@ -98,7 +98,7 @@ impl EthereumLauncher {
                     .node_role
                     .validator_keypair()
                     .expect("index must be valid");
-                let sealer_address = Address::from(sealer_key.public().address().clone());
+                let sealer_address = Address::from(*sealer_key.public().address());
 
                 let key_dir = parity::create_key_directory(&config_dir)?;
                 let key_file_path = parity::create_key_file(&key_dir, &sealer_key, &passphrase)?;

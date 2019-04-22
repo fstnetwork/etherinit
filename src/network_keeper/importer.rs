@@ -40,7 +40,7 @@ impl PeerCache {
         } else {
             self.count = 0;
             self.cache.clear();
-            peers.iter().cloned().collect()
+            peers.to_vec()
         };
 
         for peer in &new_peers {
@@ -159,7 +159,7 @@ impl Inner {
         Inner::Idle
     }
 
-    fn fetch_peers(bootnode_client: &BootnodeClient, network_name: &String) -> Self {
+    fn fetch_peers(bootnode_client: &BootnodeClient, network_name: &str) -> Self {
         Inner::FetchingPeers {
             fetcher: Box::new(
                 bootnode_client
@@ -201,12 +201,7 @@ impl Inner {
 
         let importer = Box::new(
             futures::future::join_all(futures)
-                .map(|results| {
-                    results.iter().fold(0, |n, ok| match ok {
-                        true => n + 1,
-                        false => n,
-                    })
-                })
+                .map(|results| results.iter().fold(0, |n, ok| if *ok { n + 1 } else { n }))
                 .map_err(|_| ()),
         );
 

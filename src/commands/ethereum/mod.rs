@@ -41,7 +41,7 @@ impl EthereumService {
 
         let shutdown_signal = {
             let signals: Vec<_> = [UnixSignal::SIGINT, UnixSignal::SIGTERM]
-                .into_iter()
+                .iter()
                 .map(|sig| UnixSignal::Signal::new(*sig).flatten_stream().into_future())
                 .collect();
 
@@ -86,10 +86,10 @@ impl Future for EthereumService {
             Ok(Async::Ready(_)) => {
                 self.network_keeper.register_enode();
                 self.network_keeper.import_peers();
-                return Ok(Async::NotReady);
+                Ok(Async::NotReady)
             }
-            Ok(Async::NotReady) => return Ok(Async::NotReady),
-            Err(err) => return Err(Error::from(err)),
+            Ok(Async::NotReady) => Ok(Async::NotReady),
+            Err(err) => Err(Error::from(err)),
         }
     }
 }
@@ -104,7 +104,7 @@ pub fn fetch_initial_data(
 
     let system_info = RetryFuture::new(
         Some("fetch system info".to_owned()),
-        timeout.clone(),
+        timeout,
         retry_limit,
         Box::new({
             let network_name = network_name.clone();
@@ -116,11 +116,9 @@ pub fn fetch_initial_data(
                         .then(|data| match data {
                             Ok(info) => {
                                 info!("System info: {:?}", info);
-                                return Ok(info.consensus_engine.program());
+                                Ok(info.consensus_engine.program())
                             }
-                            Err(_err) => {
-                                return Err(Error::FailedToFetchSystemInfo);
-                            }
+                            Err(_err) => Err(Error::FailedToFetchSystemInfo),
                         }),
                 )
             }
@@ -129,7 +127,7 @@ pub fn fetch_initial_data(
 
     let chainspec = RetryFuture::new(
         Some("fetch chain specification".to_owned()),
-        timeout.clone(),
+        timeout,
         retry_limit,
         Box::new({
             let fetcher = bootinfo_fetcher.clone();
@@ -139,8 +137,8 @@ pub fn fetch_initial_data(
                     fetcher
                         .fetch_chainspec(&network_name)
                         .then(|data| match data {
-                            Ok(spec) => return Ok(spec),
-                            Err(_err) => return Err(Error::FailedToFetchChainSpec),
+                            Ok(spec) => Ok(spec),
+                            Err(_err) => Err(Error::FailedToFetchChainSpec),
                         }),
                 )
             }
@@ -149,7 +147,7 @@ pub fn fetch_initial_data(
 
     let nodes = RetryFuture::new(
         Some("fetch peer info".to_owned()),
-        timeout.clone(),
+        timeout,
         retry_limit,
         Box::new({
             let is_first_miner = ctx.is_first_miner();
@@ -161,17 +159,17 @@ pub fn fetch_initial_data(
                         .fetch_enodes(&network_name)
                         .then(move |data| match data {
                             Ok(nodes) => match (nodes.len(), is_first_miner) {
-                                (0, true) => return Ok(vec![]),
+                                (0, true) => Ok(vec![]),
                                 (0, false) => {
                                     info!("No node fetched, try again later...");
-                                    return Err(Error::FailedToFetchPeers);
+                                    Err(Error::FailedToFetchPeers)
                                 }
                                 _ => {
                                     info!("{} node(s) fetched", nodes.len());
-                                    return Ok(nodes);
+                                    Ok(nodes)
                                 }
                             },
-                            Err(_err) => return Err(Error::FailedToFetchPeers),
+                            Err(_err) => Err(Error::FailedToFetchPeers),
                         }),
                 )
             }

@@ -73,17 +73,13 @@ pub fn execute() -> i32 {
         .serve(tcp_listener.incoming());
 
     let poll_fn = futures::future::poll_fn({
-        move || loop {
+        move || {
             let _ = tracker.lock().poll();
 
             match server.poll() {
-                Ok(Async::Ready(())) => return Ok(Async::Ready(())),
-                Ok(Async::NotReady) => {
-                    return Ok(Async::NotReady);
-                }
-                Err(err) => {
-                    return Err(err);
-                }
+                Ok(Async::Ready(())) => Ok(Async::Ready(())),
+                Ok(Async::NotReady) => Ok(Async::NotReady),
+                Err(err) => Err(err),
             }
         }
     });

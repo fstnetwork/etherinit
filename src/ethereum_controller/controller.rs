@@ -47,11 +47,8 @@ impl Controller {
 
     #[allow(dead_code)]
     pub fn close(&mut self) {
-        match std::mem::replace(&mut self.shutdown_sender, None) {
-            Some(sender) => {
-                sender.send(()).expect("receiver always exists");
-            }
-            None => {}
+        if let Some(sender) = std::mem::replace(&mut self.shutdown_sender, None) {
+            sender.send(()).expect("receiver always exists");
         }
     }
 }
@@ -61,13 +58,10 @@ impl Future for Controller {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Error> {
-        match self.shutdown_receiver.poll() {
-            Ok(Async::Ready(_)) => {
-                self.shutdown_receiver.close();
-                std::mem::replace(&mut self.ethereum_process, None);
-                return Ok(Async::Ready(true));
-            }
-            _ => {}
+        if let Ok(Async::Ready(_)) = self.shutdown_receiver.poll() {
+            self.shutdown_receiver.close();
+            std::mem::replace(&mut self.ethereum_process, None);
+            return Ok(Async::Ready(true));
         }
 
         match self.ethereum_process {
