@@ -29,7 +29,7 @@ export SEALER_INTRINSIC_BALANCE="646464646464646464"
 
 export RUST_BACKTRACE=1
 
-trap "pkill fst-etherinit; pkill parity; exit 0" INT
+trap "pkill etherinit; pkill parity; exit 0" INT
 
 cat >$ACCOUNT_BALANCES_FILE <<EOF
 [{
@@ -62,7 +62,7 @@ cat >$ACCOUNT_BALANCES_FILE <<EOF
 }]
 EOF
 
-BOOTNODE_SOCKET="0.0.0.0:${BOOTNODE_SERVICE_PORT}" ./target/debug/fst-etherinit run-bootnode-server &
+BOOTNODE_SOCKET="0.0.0.0:${BOOTNODE_SERVICE_PORT}" ./target/debug/etherinit run-bootnode-server &
 
 for ((i = 0; i < $MINER_COUNT; i++)); do
   export NODE_ROLE=Miner
@@ -83,7 +83,7 @@ for ((i = 0; i < $MINER_COUNT; i++)); do
   rm -v -rf $CONFIG_ROOT/first-run-lock
   rm -v -rf $CONFIG_ROOT/parity-config
 
-  RUST_LOG=info ./target/debug/fst-etherinit run-ethereum &
+  RUST_LOG=info ./target/debug/etherinit run-ethereum &
 done
 
 for ((i = 0; i < $TRANSACTOR_COUNT; i++)); do
@@ -106,7 +106,7 @@ for ((i = 0; i < $TRANSACTOR_COUNT; i++)); do
   rm -v -rf $CONFIG_ROOT/parity-config
 
   export PARITY_LOGGING=""
-  RUST_LOG=info ./target/debug/fst-etherinit run-ethereum &
+  RUST_LOG=info ./target/debug/etherinit run-ethereum &
 done
 
 for ((i = 0; i < $SYNCER_COUNT; i++)); do
@@ -129,7 +129,7 @@ for ((i = 0; i < $SYNCER_COUNT; i++)); do
   rm -v -rf $CONFIG_ROOT/parity-config
 
   export PARITY_LOGGING=""
-  RUST_LOG=info ./target/debug/fst-etherinit run-ethereum &
+  RUST_LOG=info ./target/debug/etherinit run-ethereum &
 done
 
 while true; do

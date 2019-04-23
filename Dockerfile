@@ -11,16 +11,16 @@ RUN apk add --update --no-cache \
   cmake \
   openssl-dev
 
-WORKDIR /fst-etherinit
+WORKDIR /etherinit
 
 COPY . .
 
 RUN cargo build --release --target x86_64-alpine-linux-musl
 
 # copy binary to /usr/bin
-RUN cp target/x86_64-alpine-linux-musl/release/fst-etherinit /usr/bin/fst-etherinit
+RUN cp target/x86_64-alpine-linux-musl/release/etherinit /usr/bin/etherinit
 
-## fst-etherinit
+## etherinit
 FROM alpine:edge
 
 # show backtraces
@@ -31,6 +31,6 @@ RUN apk add --update --no-cache \
   libgcc \
   openssl
 
-COPY --from=builder /usr/bin/fst-etherinit /usr/bin/fst-etherinit
+COPY --from=builder /usr/bin/etherinit /usr/bin/etherinit
 
-ENTRYPOINT [ "fst-etherinit", "version" ]
+ENTRYPOINT [ "etherinit", "version" ]

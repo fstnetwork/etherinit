@@ -10,8 +10,8 @@ impl Cli {
             .author(crate_authors!())
             .version(crate_version!())
             .about(crate_description!())
-            .subcommand(SubCommand::with_name("help").about("Show usage of FST-EtherInit"))
-            .subcommand(SubCommand::with_name("version").about("Show version of FST-EtherInit"))
+            .subcommand(SubCommand::with_name("help").about("Show usage of EtherInit"))
+            .subcommand(SubCommand::with_name("version").about("Show version of EtherInit"))
             .subcommand(
                 SubCommand::with_name("generate-chainspec").about("Generate Ethereum ChainSpec"),
             )

@@ -1,1 +1,1 @@
-# fst-etherinit
+# EtherInit
