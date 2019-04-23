@@ -103,6 +103,8 @@ pub fn create_spec_file(
 #[derive(Debug, Clone)]
 pub struct ParityMinerOptions {
     pub force_sealing: bool,
+    pub gas_cap: String,
+    pub gas_floor_target: String,
     pub sealer_address: Address,
     pub sealer_passphrase_file_path: String,
 }
@@ -142,7 +144,7 @@ impl ParityConfig {
             }
         };
 
-        let (engine_signer, author, unlock, force_sealing, password) = {
+        let (engine_signer, author, unlock, force_sealing, password, gas_cap, gas_floor_target) = {
             match self.miner_options.clone() {
                 Some(options) => {
                     let engine_signer = format!("{:x?}", options.sealer_address);
@@ -152,9 +154,13 @@ impl ParityConfig {
                         engine_signer,
                         options.force_sealing,
                         options.sealer_passphrase_file_path,
+                        options.gas_cap,
+                        options.gas_floor_target,
                     )
                 }
                 None => (
+                    Default::default(),
+                    Default::default(),
                     Default::default(),
                     Default::default(),
                     Default::default(),
@@ -212,8 +218,8 @@ impl ParityConfig {
                     reseal_on_txs = "none"
                     usd_per_tx = "0"
                     force_sealing = force_sealing
-                    gas_floor_target = "3000000000"
-                    gas_cap = "3100000000"
+                    gas_floor_target = gas_floor_target
+                    gas_cap = gas_cap
                     tx_queue_size = 1_000_000
                     tx_queue_mem_limit = 0
                     tx_queue_per_sender = 50000

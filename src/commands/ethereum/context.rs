@@ -61,9 +61,14 @@ impl Context {
                         }
                     };
 
+                    let parity_gas_floor_target = from_env("PARITY_GAS_FLOOR_TARGET").ok();
+                    let parity_gas_cap = from_env("PARITY_GAS_CAP").ok();
+
                     NodeRole::Miner {
                         sealer_mnemonic: mnemonic,
                         index,
+                        parity_gas_cap,
+                        parity_gas_floor_target,
                     }
                 }
                 _ => return Err(Error::UnknownNodeRole(node_role)),

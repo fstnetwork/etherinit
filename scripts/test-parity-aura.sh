@@ -12,6 +12,9 @@ export SEALER_MNEMONIC_PHRASE="rose rocket invest real refuse margin festival da
 export MINER_COUNT=3
 export TRANSACTOR_COUNT=2
 export SYNCER_COUNT=1
+export MIN_GAS_LIMIT="0x7A1200"
+export PARITY_GAS_FLOOR_TARGET="870000"
+export PARITY_GAS_CAP="1870000"
 
 export CONSENSUS_ENGINE="Aura"
 export AURA_CONSENSUS_PARAMETERS='{"blockPeriod": 5}'

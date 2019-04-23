@@ -7,6 +7,8 @@ pub enum NodeRole {
     Miner {
         index: usize,
         sealer_mnemonic: Mnemonic,
+        parity_gas_floor_target: Option<String>,
+        parity_gas_cap: Option<String>,
     },
     Transactor,
     Syncer,
@@ -58,6 +60,7 @@ impl NodeRole {
             NodeRole::Miner {
                 index,
                 sealer_mnemonic,
+                ..
             } => match super::generate_keypair_with_index(sealer_mnemonic, *index) {
                 Ok(kp) => Some(kp),
                 _ => None,

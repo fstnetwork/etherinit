@@ -15,6 +15,9 @@ pub use self::ethereum_chainspec::EthereumChainSpec;
 pub use self::node_info::NodeInfo;
 pub use self::node_role::NodeRole;
 
+pub const DEFAULT_PARITY_GAS_CAP: &str = "10000000";
+pub const DEFAULT_PARITY_GAS_FLOOR_TARGET: &str = "8000000";
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum EthereumProgram {
     Parity,

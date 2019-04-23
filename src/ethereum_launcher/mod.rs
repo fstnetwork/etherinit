@@ -4,7 +4,10 @@ use std::path::PathBuf;
 use std::process::Command;
 use tokio_process::{Child as ChildProcess, CommandExt};
 
-use crate::primitives::{EthereumNodeUrl, EthereumProgram, NodeRole};
+use crate::primitives::{
+    EthereumNodeUrl, EthereumProgram, NodeRole, DEFAULT_PARITY_GAS_CAP,
+    DEFAULT_PARITY_GAS_FLOOR_TARGET,
+};
 
 mod error;
 mod geth;
@@ -91,7 +94,11 @@ impl EthereumLauncher {
             parity::create_reserverd_peers_file(&config_dir, &self.bootnodes)?;
 
         match self.node_role.clone() {
-            NodeRole::Miner { .. } => {
+            NodeRole::Miner {
+                parity_gas_cap,
+                parity_gas_floor_target,
+                ..
+            } => {
                 let passphrase = String::from(DEFAULT_SEALER_KEYFILE_PASSPHRASE);
 
                 let sealer_key = self
@@ -113,6 +120,10 @@ impl EthereumLauncher {
                     let config = parity::ParityConfig {
                         miner_options: Some(parity::ParityMinerOptions {
                             force_sealing: true,
+                            gas_cap: parity_gas_cap
+                                .unwrap_or_else(|| DEFAULT_PARITY_GAS_CAP.to_string()),
+                            gas_floor_target: parity_gas_floor_target
+                                .unwrap_or_else(|| DEFAULT_PARITY_GAS_FLOOR_TARGET.to_string()),
                             sealer_address,
                             sealer_passphrase_file_path: sealer_password_file_path
                                 .to_str()

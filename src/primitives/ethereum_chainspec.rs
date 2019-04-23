@@ -26,6 +26,9 @@ pub struct EthereumChainSpec {
     /// network ID of Ethereum Blockchain
     pub network_id: U256,
 
+    /// Minimum gas limit of a block
+    pub min_gas_limit: U256,
+
     /// gas limit of genesis block
     pub genesis_block_gas_limit: U256,
 
@@ -41,6 +44,7 @@ impl Default for EthereumChainSpec {
         EthereumChainSpec {
             name: "ethereum".to_owned(),
             network_id: U256::from(0x1234),
+            min_gas_limit: U256::from(0x1388),
             genesis_block_gas_limit: U256::from(5) * U256::from(10).pow(U256::from(18)),
             consensus_engine: ConsensusEngine::ParityAura {
                 block_period: 5,
@@ -125,6 +129,14 @@ impl EthereumChainSpec {
             match U256::from_str(utils::clean_0x(raw_value.as_str())) {
                 Ok(v) => v,
                 Err(_) => return Err(Error::InvalidGasLimitValue(raw_value)),
+            }
+        };
+
+        let min_gas_limit = {
+            let raw_value = from_env("MIN_GAS_LIMIT").unwrap_or_else(|_| "0x1388".to_string());
+            match U256::from_str(utils::clean_0x(raw_value.as_str())) {
+                Ok(v) => v,
+                Err(_) => return Err(Error::InvalidMinimumGasLimitValue(raw_value)),
             }
         };
 
@@ -245,6 +257,7 @@ impl EthereumChainSpec {
         Ok(EthereumChainSpec {
             name,
             network_id: U256::from(0x2323),
+            min_gas_limit,
             genesis_block_gas_limit,
             consensus_engine,
             account_balances,
@@ -308,14 +321,14 @@ impl EthereumChainSpec {
             "name": self.name,
             "genesis": {
                 "difficulty": "0x1",
-                "gasLimit": format!("0x{:x}", self.genesis_block_gas_limit),
+                "gasLimit": to_0xhex(&self.genesis_block_gas_limit),
                 "seal": seal
             } ,
             "params": {
                 "maximumExtraDataSize": "0x20",
-                "minGasLimit":          "0x1388",
+                "minGasLimit": to_0xhex(&self.min_gas_limit),
                 "gasLimitBoundDivisor": "0x400",
-                "networkID":  format!("0x{:x}", self.network_id),
+                "networkID": to_0xhex(&self.network_id),
                 "eip155Transition": 0,
                 "maxCodeSize": 24576,
                 "maxCodeSizeTransition": 0,
@@ -399,7 +412,7 @@ impl EthereumChainSpec {
             .as_object_mut()
             .expect("accounts is an object; qed");
         for (address, balance) in &self.account_balances {
-            let address = format!("0x{:x}", address);
+            let address = to_0xhex(address);
             let balance = format!("{}", balance);
             spec_accounts
                 .entry(address)
@@ -430,4 +443,8 @@ pub fn keypair_from_sealer_mnemonic(
     }
 
     Ok(keypairs)
+}
+
+fn to_0xhex<V: std::fmt::LowerHex>(value: &V) -> String {
+    format!("0x{:x}", value)
 }

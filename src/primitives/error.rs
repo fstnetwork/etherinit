@@ -29,6 +29,9 @@ pub enum Error {
     #[fail(display = "Invalid gas limit value: {}", _0)]
     InvalidGasLimitValue(String),
 
+    #[fail(display = "Invalid minimum gas limit value: {}", _0)]
+    InvalidMinimumGasLimitValue(String),
+
     #[fail(display = "Invalid account balance data: {}", _0)]
     InvalidAccountBalanceData(String),
 
