@@ -250,6 +250,8 @@ pub fn execute() -> i32 {
         ctx.bootnode_service_host,
         ctx.bootnode_service_port,
         &ethereum_node_endpoint,
+        Some(ctx.http_jsonrpc_port),
+        Some(ctx.websocket_jsonrpc_port),
     );
 
     match runtime.block_on(EthereumService::new(

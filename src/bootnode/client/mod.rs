@@ -2,6 +2,7 @@ use futures::{Future, Stream};
 use hyper::{Body, Client as HyperClient, Request, Uri};
 use serde_json::Value as JsonValue;
 use std::str::FromStr;
+use url::Url;
 
 use crate::primitives::{EthereumNodeUrl, EthereumSystemInfo};
 
@@ -105,6 +106,30 @@ impl Client {
         )
     }
 
+    pub fn add_http_jsonrpc_endpoint(
+        &self,
+        network_name: &str,
+        url: &Url,
+    ) -> impl Future<Item = bool, Error = Error> {
+        self.post_plain(
+            &format!("/ethereum/{}/http-jsonrpc-endpoints", network_name),
+            url.to_string(),
+            |_| Ok(true),
+        )
+    }
+
+    pub fn add_ws_jsonrpc_endpoint(
+        &self,
+        network_name: &str,
+        url: &Url,
+    ) -> impl Future<Item = bool, Error = Error> {
+        self.post_plain(
+            &format!("/ethereum/{}/ws-jsonrpc-endpoints", network_name),
+            url.to_string(),
+            |_| Ok(true),
+        )
+    }
+
     pub fn fetch_system_info(
         &self,
         network_name: &str,
@@ -148,5 +173,43 @@ impl Client {
                 _ => Ok(vec![]),
             }
         })
+    }
+
+    pub fn fetch_rpc_endpoints(
+        &self,
+        network_name: &str,
+        endpoint_path: &str,
+    ) -> impl Future<Item = Vec<Url>, Error = Error> {
+        self.get_json(
+            &format!("/ethereum/{}/{}", network_name, endpoint_path),
+            |data| match serde_json::from_slice(&data) {
+                Ok(JsonValue::Array(arr)) => {
+                    let vec = Vec::with_capacity(arr.len());
+                    Ok(arr.iter().fold(vec, |mut vec, value| {
+                        if let JsonValue::String(url) = value {
+                            if let Ok(url) = Url::from_str(&url) {
+                                vec.push(url);
+                            }
+                        };
+                        vec
+                    }))
+                }
+                _ => Ok(vec![]),
+            },
+        )
+    }
+
+    pub fn fetch_http_rpc_endpoints(
+        &self,
+        network_name: &str,
+    ) -> impl Future<Item = Vec<Url>, Error = Error> {
+        self.fetch_rpc_endpoints(network_name, "http-jsonrpc-endpoints")
+    }
+
+    pub fn fetch_ws_jsonrpc_endpoints(
+        &self,
+        network_name: &str,
+    ) -> impl Future<Item = Vec<Url>, Error = Error> {
+        self.fetch_rpc_endpoints(network_name, "ws-jsonrpc-endpoints")
     }
 }

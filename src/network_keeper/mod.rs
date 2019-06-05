@@ -37,6 +37,8 @@ impl NetworkKeeper {
         bootnode_host: String,
         bootnode_port: u16,
         ethereum_node_endpoint: P,
+        http_jsonrpc_port: Option<u16>,
+        ws_jsonrpc_port: Option<u16>,
     ) -> NetworkKeeper
     where
         P: AsRef<Path>,
@@ -51,6 +53,8 @@ impl NetworkKeeper {
             network_name.clone(),
             web3.clone(),
             bootnode_client.clone(),
+            http_jsonrpc_port,
+            ws_jsonrpc_port,
         );
 
         let importer = Importer::new(ethereum_program, network_name, web3, bootnode_client);

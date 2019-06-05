@@ -1,5 +1,6 @@
 use parking_lot::Mutex;
 use std::sync::Arc;
+use url::Url;
 
 use crate::primitives::EthereumNodeUrl;
 
@@ -78,6 +79,26 @@ impl Service {
         Ok(nodes)
     }
 
+    #[get("/ethereum/:network/http-jsonrpc-endpoints")]
+    #[content_type("application/json")]
+    fn ethereum_nodes_http_endpoints(&self, network: String) -> Result<Vec<String>, ()> {
+        let nodes = match self.tracker.lock().ethereum().get(&network) {
+            Some(network) => network.http_jsonrpc_endpoints().map(ToString::to_string).collect(),
+            None => vec![],
+        };
+        Ok(nodes)
+    }
+
+    #[get("/ethereum/:network/ws-jsonrpc-endpoints")]
+    #[content_type("application/json")]
+    fn ethereum_nodes_ws_endpoints(&self, network: String) -> Result<Vec<String>, ()> {
+        let nodes = match self.tracker.lock().ethereum().get(&network) {
+            Some(network) => network.ws_jsonrpc_endpoints().map(ToString::to_string).collect(),
+            None => vec![],
+        };
+        Ok(nodes)
+    }
+
     #[get("/ethereum/:network/miners")]
     #[content_type("application/json")]
     fn ethereum_miners(&self, network: String) -> Result<Vec<String>, ()> {
@@ -103,6 +124,42 @@ impl Service {
         ) {
             (Some(e), Ok(url)) => {
                 e.update_node(url.clone());
+                Ok(url.to_string())
+            }
+            _ => {
+                Ok(String::new())
+            }
+        }
+    }
+
+    #[post("/ethereum/:network/http-jsonrpc-endpoints")]
+    #[content_type("text/plain")]
+    fn update_http_jsonrpc_endpoints(&self, network: String, body: String) -> Result<String, ()> {
+        use std::str::FromStr;
+        match (
+            self.tracker.lock().ethereum_mut().get_mut(&network),
+            Url::from_str(body.as_str()),
+        ) {
+            (Some(e), Ok(url)) => {
+                e.update_http_jsonrpc_endpoint(url.clone());
+                Ok(url.to_string())
+            }
+            _ => {
+                Ok(String::new())
+            }
+        }
+    }
+
+    #[post("/ethereum/:network/ws-jsonrpc-endpoints")]
+    #[content_type("text/plain")]
+    fn update_ws_jsonrpc_endpoints(&self, network: String, body: String) -> Result<String, ()> {
+        use std::str::FromStr;
+        match (
+            self.tracker.lock().ethereum_mut().get_mut(&network),
+            Url::from_str(body.as_str()),
+        ) {
+            (Some(e), Ok(url)) => {
+                e.update_ws_jsonrpc_endpoint(url.clone());
                 Ok(url.to_string())
             }
             _ => {

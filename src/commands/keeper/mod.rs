@@ -17,6 +17,8 @@ struct Context {
     bootnode_service_host: String,
     bootnode_service_port: u16,
     ethereum_node_endpoint: String,
+    http_jsonrpc_port: Option<u16>,
+    ws_jsonrpc_port: Option<u16>,
 }
 
 impl Context {
@@ -29,12 +31,24 @@ impl Context {
         let bootnode_service_host = from_env("BOOTNODE_SERVICE_HOST")?;
         let bootnode_service_port = from_env("BOOTNODE_SERVICE_PORT")?.parse()?;
 
+        let http_jsonrpc_port = match from_env("HTTP_JSON_RPC_PORT") {
+            Ok(port) => port.parse().ok(),
+            Err(_) => None,
+        };
+
+        let ws_jsonrpc_port = match from_env("WEBSOCKET_JSON_RPC_PORT") {
+            Ok(port) => port.parse().ok(),
+            Err(_) => None,
+        };
+
         Ok(Context {
             network_name,
             ethereum_program,
             ethereum_node_endpoint,
             bootnode_service_host,
             bootnode_service_port,
+            http_jsonrpc_port,
+            ws_jsonrpc_port,
         })
     }
 }
@@ -67,6 +81,8 @@ pub fn execute() -> i32 {
             ctx.bootnode_service_host,
             ctx.bootnode_service_port,
             &ctx.ethereum_node_endpoint,
+            ctx.http_jsonrpc_port,
+            ctx.ws_jsonrpc_port,
         );
 
         let ticker = tokio::timer::Interval::new_interval(Duration::from_secs(5));

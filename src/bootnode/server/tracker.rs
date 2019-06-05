@@ -3,6 +3,7 @@ use serde_json::Value as JsonValue;
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 use tokio::timer::Interval;
+use url::Url;
 
 use crate::primitives::{EthereumChainSpec, EthereumNodeUrl, EthereumSystemInfo};
 
@@ -13,6 +14,8 @@ pub struct EthereumNetwork {
     spec: EthereumChainSpec,
     spec_json: JsonValue,
     nodes: HashMap<EthereumNodeUrl, Instant>,
+    http_jsonrpc_endpoints: HashSet<Url>,
+    ws_jsonrpc_endpoints: HashSet<Url>,
     node_lifetime: Duration,
 }
 
@@ -23,6 +26,8 @@ impl EthereumNetwork {
             spec,
             spec_json,
             nodes: Default::default(),
+            http_jsonrpc_endpoints: Default::default(),
+            ws_jsonrpc_endpoints: Default::default(),
             node_lifetime,
         }
     }
@@ -43,6 +48,16 @@ impl EthereumNetwork {
     #[inline]
     pub fn nodes(&self) -> impl Iterator<Item = &EthereumNodeUrl> {
         self.nodes.keys()
+    }
+
+    #[inline]
+    pub fn http_jsonrpc_endpoints(&self) -> impl Iterator<Item = &Url> {
+        self.http_jsonrpc_endpoints.iter()
+    }
+
+    #[inline]
+    pub fn ws_jsonrpc_endpoints(&self) -> impl Iterator<Item = &Url> {
+        self.ws_jsonrpc_endpoints.iter()
     }
 
     pub fn drain_outdated_nodes(&mut self) {
@@ -89,6 +104,16 @@ impl EthereumNetwork {
     #[inline]
     pub fn update_node(&mut self, enode_url: EthereumNodeUrl) {
         self.nodes.insert(enode_url, Instant::now());
+    }
+
+    #[inline]
+    pub fn update_http_jsonrpc_endpoint(&mut self, endpoint: Url) {
+        self.http_jsonrpc_endpoints.insert(endpoint);
+    }
+
+    #[inline]
+    pub fn update_ws_jsonrpc_endpoint(&mut self, endpoint: Url) {
+        self.ws_jsonrpc_endpoints.insert(endpoint);
     }
 }
 

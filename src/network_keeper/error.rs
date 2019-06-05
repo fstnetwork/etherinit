@@ -12,6 +12,9 @@ pub enum Error {
 
     #[fail(display = "EthereumNodeUrl error: {}", _0)]
     EthereumNodeUrl(EthereumNodeUrlError),
+
+    #[fail(display = "Unable to register Ethereum node info")]
+    UnableToRegisterEthereumNodeInfo,
 }
 
 impl From<web3::Error> for Error {

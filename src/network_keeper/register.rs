@@ -1,5 +1,6 @@
 use futures::{sync::mpsc, Async, Future, Poll, Stream};
 use std::str::FromStr;
+use url::Url;
 
 use crate::primitives::{EthereumNodeUrl, EthereumProgram};
 
@@ -18,6 +19,9 @@ pub struct Register {
     network_name: String,
     web3: Web3,
     bootnode_client: BootnodeClient,
+
+    http_jsonrpc_port: Option<u16>,
+    ws_jsonrpc_port: Option<u16>,
 }
 
 impl Register {
@@ -26,6 +30,8 @@ impl Register {
         network_name: String,
         web3: Web3,
         bootnode_client: BootnodeClient,
+        http_jsonrpc_port: Option<u16>,
+        ws_jsonrpc_port: Option<u16>,
     ) -> Register {
         let (event_sender, event_receiver) = mpsc::unbounded();
         Register {
@@ -36,6 +42,8 @@ impl Register {
             network_name,
             web3,
             bootnode_client,
+            http_jsonrpc_port,
+            ws_jsonrpc_port,
         }
     }
 
@@ -61,12 +69,30 @@ impl Future for Register {
                 },
                 Inner::FetchingUrl { ref mut fetcher } => match fetcher.poll() {
                     Ok(Async::NotReady) => return Ok(Async::NotReady),
-                    Ok(Async::Ready(url)) => {
+                    Ok(Async::Ready(enode_url)) => {
                         info!(
                             "Node Register: Ethereum Node URL fetched, URL: {}",
-                            url.to_string()
+                            enode_url.to_string()
                         );
-                        Inner::register_url(&self.bootnode_client, &self.network_name, url)
+
+                        let host = &enode_url.host;
+                        let http_jsonrpc_port = self.http_jsonrpc_port.map(|port| {
+                            Url::parse(&format!("http://{}:{}", host, port))
+                                .expect("the URL is valid")
+                        });
+
+                        let ws_jsonrpc_port = self.ws_jsonrpc_port.map(|port| {
+                            Url::parse(&format!("ws://{}:{}", host, port))
+                                .expect("the URL is valid")
+                        });
+
+                        Inner::register_url(
+                            &self.bootnode_client,
+                            &self.network_name,
+                            enode_url,
+                            http_jsonrpc_port,
+                            ws_jsonrpc_port,
+                        )
                     }
                     Err(err) => {
                         warn!(
@@ -125,12 +151,38 @@ impl Inner {
     fn register_url(
         bootnode_client: &BootnodeClient,
         network_name: &str,
-        url: EthereumNodeUrl,
+        enode_url: EthereumNodeUrl,
+        http_jsonrpc_endpoint: Option<Url>,
+        ws_jsonrpc_endpoint: Option<Url>,
     ) -> Self {
-        let register = Box::new(
+        let mut futs: Vec<Box<Future<Item = bool, Error = Error> + Send>> = Vec::with_capacity(3);
+
+        futs.push(Box::new(
             bootnode_client
-                .add_enode_url(network_name, &url)
+                .add_enode_url(network_name, &enode_url)
                 .from_err::<Error>(),
+        ));
+
+        if let Some(url) = http_jsonrpc_endpoint {
+            futs.push(Box::new(
+                bootnode_client
+                    .add_http_jsonrpc_endpoint(network_name, &url)
+                    .from_err::<Error>(),
+            ));
+        }
+
+        if let Some(url) = ws_jsonrpc_endpoint {
+            futs.push(Box::new(
+                bootnode_client
+                    .add_ws_jsonrpc_endpoint(network_name, &url)
+                    .from_err::<Error>(),
+            ));
+        }
+
+        let register = Box::new(
+            futures::future::join_all(futs)
+                .map(|_| true)
+                .map_err(|_| Error::UnableToRegisterEthereumNodeInfo),
         );
 
         Inner::RegisteringUrl { register }
