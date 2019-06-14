@@ -1,5 +1,8 @@
 #[derive(Debug, Fail)]
 pub enum Error {
+    #[fail(display = "Invalid running mode: {}", _0)]
+    InvalidRunningMode(String),
+
     #[fail(display = "Io error: {}", _0)]
     StdIo(std::io::Error),
 

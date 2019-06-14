@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::primitives::{EthereumNodeUrl, NodeRole};
 
-use super::Error;
+use super::{Error, RunningMode};
 
 pub fn create_key_directory(config_dir_path: &PathBuf) -> Result<PathBuf, Error> {
     let mut path = PathBuf::from(config_dir_path);
@@ -111,6 +111,8 @@ pub struct ParityMinerOptions {
 
 #[derive(Debug, Clone)]
 pub struct ParityConfig {
+    pub running_mode: RunningMode,
+
     pub db_path: String,
     pub node_role: NodeRole,
     pub miner_options: Option<ParityMinerOptions>,
@@ -142,6 +144,14 @@ impl ParityConfig {
             (None, None) => {
                 "txqueue=debug,own_tx=debug,network=info,miner=info,mode=info".to_owned()
             }
+        };
+
+        let (http_apis, ws_apis) = {
+            let apis = match self.running_mode {
+                RunningMode::Production => vec!["eth", "net", "parity", "web3"],
+                RunningMode::Development => vec!["all"],
+            };
+            (apis.clone(), apis)
         };
 
         let (engine_signer, author, unlock, force_sealing, password, gas_cap, gas_floor_target) = {
@@ -229,14 +239,14 @@ impl ParityConfig {
                     interface = "0.0.0.0"
                     port = websocket_jsonrpc_port
                     hosts = ["all"]
-                    apis = ["eth", "net", "parity", "web3"]
+                    apis = ws_apis
                     origins = ["all"]
 
                     [rpc]
                     interface = "0.0.0.0"
                     port = http_jsonrpc_port
                     hosts = ["all"]
-                    apis = ["eth", "net", "parity", "web3"]
+                    apis = http_apis
                     max_payload = 128
 
                     [ipc]
@@ -281,14 +291,14 @@ impl ParityConfig {
                     interface = "0.0.0.0"
                     port = websocket_jsonrpc_port
                     hosts = ["all"]
-                    apis = ["eth", "net", "parity", "web3"]
+                    apis = ws_apis
                     origins = ["all"]
 
                     [rpc]
                     interface = "0.0.0.0"
                     port = http_jsonrpc_port
                     hosts = ["all"]
-                    apis = ["eth", "net", "parity", "web3"]
+                    apis = http_apis
                     max_payload = 128
 
                     [ipc]

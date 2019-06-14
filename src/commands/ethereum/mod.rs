@@ -219,6 +219,8 @@ pub fn execute() -> i32 {
             program: ethereum_program,
             chainspec,
 
+            running_mode: ctx.running_mode,
+
             node_role: ctx.node_role.clone(),
             bootnodes: static_nodes,
 

@@ -1,7 +1,9 @@
 use hdwallet::mnemonic::{Language, Mnemonic};
+use std::str::FromStr;
 use std::time::Duration;
 
 use crate::ethereum_controller::RestartPolicy;
+use crate::ethereum_launcher::RunningMode;
 use crate::primitives::NodeRole;
 use crate::utils::env_var::from_env;
 
@@ -9,6 +11,9 @@ use super::Error;
 
 #[derive(Debug, Clone)]
 pub struct Context {
+    /// running mode of current context
+    pub running_mode: RunningMode,
+
     /// name of this ethereum network
     pub network_name: String,
 
@@ -45,6 +50,10 @@ impl Context {
         use std::env;
         let network_name = from_env("NETWORK_NAME")?;
 
+        let running_mode =
+            RunningMode::from_str(&from_env("RUNNING_MODE").unwrap_or("production".to_owned()))
+                .unwrap_or(RunningMode::Production);
+
         let node_role = {
             let node_role = from_env("NODE_ROLE")?;
 
@@ -78,6 +87,8 @@ impl Context {
         let parity_logging = env::var("PARITY_LOGGING").ok();
 
         Ok(Context {
+            running_mode,
+
             network_name,
 
             node_role,

@@ -16,6 +16,8 @@ export MIN_GAS_LIMIT="0x7A1200"
 export PARITY_GAS_FLOOR_TARGET="870000"
 export PARITY_GAS_CAP="1870000"
 
+export RUNNING_MODE="development"
+
 export CONSENSUS_ENGINE="Aura"
 export AURA_CONSENSUS_PARAMETERS='{"blockPeriod": 5}'
 

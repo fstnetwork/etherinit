@@ -19,9 +19,29 @@ const PARITY_EXECUTABLE_PATH: &str = "parity";
 const GETH_EXECUTABLE_PATH: &str = "geth";
 const DEFAULT_SEALER_KEYFILE_PASSPHRASE: &str = "0123456789";
 
+#[derive(Debug, Clone, Copy)]
+pub enum RunningMode {
+    Production,
+    Development,
+}
+
+impl std::str::FromStr for RunningMode {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "production" => Ok(RunningMode::Production),
+            "development" | "dev" => Ok(RunningMode::Development),
+            _ => Err(Error::InvalidRunningMode(s.to_owned())),
+        }
+    }
+}
+
 pub struct EthereumLauncher {
     pub program: EthereumProgram,
     pub chainspec: JsonValue,
+
+    pub running_mode: RunningMode,
 
     pub node_role: NodeRole,
     pub bootnodes: Vec<EthereumNodeUrl>,
@@ -118,6 +138,8 @@ impl EthereumLauncher {
 
                 let config_file_path: String = {
                     let config = parity::ParityConfig {
+                        running_mode: self.running_mode,
+
                         miner_options: Some(parity::ParityMinerOptions {
                             force_sealing: true,
                             gas_cap: parity_gas_cap
@@ -169,6 +191,8 @@ impl EthereumLauncher {
             NodeRole::Transactor | NodeRole::Syncer => {
                 let config_file_path: String = {
                     let config = parity::ParityConfig {
+                        running_mode: self.running_mode,
+
                         miner_options: None,
 
                         db_path: db_path.to_str().expect("db directory path").to_owned(),
