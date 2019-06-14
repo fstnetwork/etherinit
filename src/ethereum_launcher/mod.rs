@@ -19,6 +19,10 @@ const PARITY_EXECUTABLE_PATH: &str = "parity";
 const GETH_EXECUTABLE_PATH: &str = "geth";
 const DEFAULT_SEALER_KEYFILE_PASSPHRASE: &str = "0123456789";
 
+const DEFAULT_TX_QUEUE_SIZE: u32 = 8192;
+const DEFAULT_TX_QUEUE_MEM_LIMIT: u32 = 4;
+const DEFAULT_TX_QUEUE_PER_SENDER: u32 = 16;
+
 #[derive(Debug, Clone, Copy)]
 pub enum RunningMode {
     Production,
@@ -49,6 +53,10 @@ pub struct EthereumLauncher {
     pub network_port: u16,
     pub http_jsonrpc_port: u16,
     pub websocket_jsonrpc_port: u16,
+
+    pub parity_tx_queue_size: Option<u32>,
+    pub parity_tx_mem_limit: Option<u32>,
+    pub parity_tx_queue_per_sender: Option<u32>,
 
     pub parity_logging: Option<String>,
 }
@@ -169,6 +177,14 @@ impl EthereumLauncher {
                         http_jsonrpc_port: self.http_jsonrpc_port,
                         websocket_jsonrpc_port: self.websocket_jsonrpc_port,
 
+                        tx_queue_size: self.parity_tx_queue_size.unwrap_or(DEFAULT_TX_QUEUE_SIZE),
+                        tx_queue_mem_limit: self
+                            .parity_tx_mem_limit
+                            .unwrap_or(DEFAULT_TX_QUEUE_MEM_LIMIT),
+                        tx_queue_per_sender: self
+                            .parity_tx_queue_per_sender
+                            .unwrap_or(DEFAULT_TX_QUEUE_PER_SENDER),
+
                         logging: self.parity_logging.clone(),
                     };
 
@@ -210,6 +226,14 @@ impl EthereumLauncher {
                         network_port: self.network_port,
                         http_jsonrpc_port: self.http_jsonrpc_port,
                         websocket_jsonrpc_port: self.websocket_jsonrpc_port,
+
+                        tx_queue_size: self.parity_tx_queue_size.unwrap_or(DEFAULT_TX_QUEUE_SIZE),
+                        tx_queue_mem_limit: self
+                            .parity_tx_mem_limit
+                            .unwrap_or(DEFAULT_TX_QUEUE_MEM_LIMIT),
+                        tx_queue_per_sender: self
+                            .parity_tx_queue_per_sender
+                            .unwrap_or(DEFAULT_TX_QUEUE_PER_SENDER),
 
                         logging: self.parity_logging.clone(),
                     };

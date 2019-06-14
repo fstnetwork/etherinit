@@ -228,6 +228,10 @@ pub fn execute() -> i32 {
             http_jsonrpc_port: ctx.http_jsonrpc_port,
             websocket_jsonrpc_port: ctx.websocket_jsonrpc_port,
 
+            parity_tx_mem_limit: ctx.parity_tx_queue_mem_limit,
+            parity_tx_queue_size: ctx.parity_tx_queue_size,
+            parity_tx_queue_per_sender: ctx.parity_tx_queue_per_sender,
+
             parity_logging: ctx.parity_logging,
         };
 

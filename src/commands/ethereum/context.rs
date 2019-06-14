@@ -32,8 +32,17 @@ pub struct Context {
     /// Ethereum Client WebSocket JSON-RPC port
     pub websocket_jsonrpc_port: u16,
 
-    /// Parity Ethereum logging options
+    /// Parity Ethereum: logging options
     pub parity_logging: Option<String>,
+
+    /// Parity Ethereum: Maximum amount of memory that can be used by the transaction queue in MiB
+    pub parity_tx_queue_mem_limit: Option<u32>,
+
+    /// Parity Ethereum: Maximum amount of transactions in the queue
+    pub parity_tx_queue_size: Option<u32>,
+
+    /// Parity Ethereum: Maximum number of transactions per sender in the queue.
+    pub parity_tx_queue_per_sender: Option<u32>,
 
     /// hostname of bootnode service
     pub bootnode_service_host: String,
@@ -106,6 +115,16 @@ impl Context {
                     .unwrap_or_else(|_| "5".into())
                     .parse()?,
             ),
+
+            parity_tx_queue_mem_limit: from_env("PARITY_TX_QUEUE_MEM_LIMIT")
+                .map(|s| s.parse().unwrap_or(4))
+                .ok(),
+            parity_tx_queue_per_sender: from_env("PARITY_TX_QUEUE_PER_SENDER")
+                .map(|s| s.parse().unwrap_or(16))
+                .ok(),
+            parity_tx_queue_size: from_env("PARITY_TX_QUEUE_SIZE")
+                .map(|s| s.parse().unwrap_or(8192))
+                .ok(),
 
             parity_logging,
         })

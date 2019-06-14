@@ -128,6 +128,10 @@ pub struct ParityConfig {
     pub http_jsonrpc_port: u16,
     pub websocket_jsonrpc_port: u16,
 
+    pub tx_queue_size: u32,
+    pub tx_queue_mem_limit: u32,
+    pub tx_queue_per_sender: u32,
+
     pub logging: Option<String>,
 }
 
@@ -195,6 +199,10 @@ impl ParityConfig {
             NodeRole::Syncer => "archive",
         };
 
+        let tx_queue_size = self.tx_queue_size;
+        let tx_queue_mem_limit = self.tx_queue_mem_limit;
+        let tx_queue_per_sender = self.tx_queue_per_sender;
+
         let tx_gas_limit = U256::max_value().to_string();
 
         match self.node_role {
@@ -230,9 +238,9 @@ impl ParityConfig {
                     force_sealing = force_sealing
                     gas_floor_target = gas_floor_target
                     gas_cap = gas_cap
-                    tx_queue_size = 1_000_000
-                    tx_queue_mem_limit = 0
-                    tx_queue_per_sender = 50000
+                    tx_queue_size = tx_queue_size
+                    tx_queue_mem_limit = tx_queue_mem_limit
+                    tx_queue_per_sender = tx_queue_per_sender
                     tx_gas_limit = tx_gas_limit
 
                     [websockets]
@@ -283,9 +291,9 @@ impl ParityConfig {
                     max_pending_peers = 32
 
                     [mining]
-                    tx_queue_size = 1_000_000
-                    tx_queue_mem_limit = 0
-                    tx_queue_per_sender = 50000
+                    tx_queue_size = tx_queue_size
+                    tx_queue_mem_limit = tx_queue_mem_limit
+                    tx_queue_per_sender = tx_queue_per_sender
 
                     [websockets]
                     interface = "0.0.0.0"
