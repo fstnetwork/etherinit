@@ -1,7 +1,12 @@
-with import <nixpkgs> {}; {
-  devEnv = stdenv.mkDerivation {
-    name = "dev";
-    buildInputs = [ stdenv openssl pkgconfig rustup  ];
-  };
+with import <nixpkgs> {};
+
+stdenv.mkDerivation {
+  name = "etherinit-devenv";
+  buildInputs = [
+    stdenv
+    openssl
+    pkgconfig
+    rustup
+  ];
 }
 
