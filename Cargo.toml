@@ -1,6 +1,6 @@
 [package]
 name = "etherinit"
-version = "0.2.4"
+version = "0.2.5"
 authors = ["fstnetwork <admin@fstk.io>"]
 edition = "2018"
 
