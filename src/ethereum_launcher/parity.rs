@@ -274,6 +274,7 @@ impl ParityConfig {
             NodeRole::Transactor | NodeRole::Syncer => {
                 toml! {
                     [parity]
+                    db_path = db_path
                     chain = chain
                     identity = identity
                     no_persistent_txqueue = false
