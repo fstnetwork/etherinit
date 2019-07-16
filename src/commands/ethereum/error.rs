@@ -28,6 +28,9 @@ pub enum Error {
     #[fail(display = "Invalid mnemonic phrase {}", _0)]
     InvalidMnemonicPhrase(String),
 
+    #[fail(display = "Failed to extract miner index from HOSTNAME={}", _0)]
+    FailedToExtractMinerIndexFromHostname(String),
+
     // #[fail(
     //     display = "Too larget miner index: {}, miner count: {}",
     //     miner_index, miner_count

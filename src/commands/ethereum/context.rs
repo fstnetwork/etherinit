@@ -70,7 +70,24 @@ impl Context {
                 "syncer" => NodeRole::Syncer,
                 "transactor" => NodeRole::Transactor,
                 "miner" => {
-                    let index: usize = from_env("MINER_INDEX")?.parse()?;
+                    let index: usize = {
+                        if from_env("USE_HOSTNAME_SUFFIX_AS_MINER_INDEX")
+                            .map(|s| s.parse::<u32>().map(|v| v != 0).unwrap_or(false))
+                            .unwrap_or(false)
+                        {
+                            let hostname = from_env("HOSTNAME")?;
+                            match hostname.split("-").last() {
+                                Some(index) => index.parse()?,
+                                None => {
+                                    return Err(Error::FailedToExtractMinerIndexFromHostname(
+                                        hostname,
+                                    ));
+                                }
+                            }
+                        } else {
+                            from_env("MINER_INDEX")?.parse()?
+                        }
+                    };
                     let seed = from_env("SEALER_MNEMONIC_PHRASE")?;
                     let mnemonic = match Mnemonic::try_from(Language::English, seed.as_str()) {
                         Ok(m) => m,
