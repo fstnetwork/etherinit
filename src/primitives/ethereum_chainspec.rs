@@ -9,7 +9,7 @@ use std::str::FromStr;
 use crate::utils::{self, env_var::from_env};
 
 use super::error::Error;
-use super::{generate_keypair_with_index, ConsensusEngine};
+use super::{generate_keypair_with_index, AccountState, ConsensusEngine};
 
 lazy_static! {
     static ref PARITY_DEFAULT_SEAL: serde_json::Value = json!({
@@ -35,8 +35,7 @@ pub struct EthereumChainSpec {
     /// consensus engine type and its parameters
     pub consensus_engine: ConsensusEngine,
 
-    /// account balances
-    pub account_balances: HashMap<Address, U256>,
+    pub account_states: HashMap<Address, AccountState>,
 }
 
 impl Default for EthereumChainSpec {
@@ -51,7 +50,7 @@ impl Default for EthereumChainSpec {
                 block_reward: U256::from(5) * U256::from(10).pow(U256::from(18)),
                 validators: vec![],
             },
-            account_balances: Default::default(),
+            account_states: Default::default(),
         }
     }
 }
@@ -68,57 +67,37 @@ impl EthereumChainSpec {
         Ok(validators)
     }
 
-    fn account_balances_from_env() -> Result<HashMap<Address, U256>, Error> {
-        let account_balances_file_path = match from_env("ACCOUNT_BALANCES_FILE") {
+    fn account_states_from_env() -> Result<HashMap<Address, AccountState>, Error> {
+        let account_states_file_path = match from_env("ACCOUNT_STATES_FILE") {
             Ok(file_path) => PathBuf::from(file_path),
             Err(_) => return Ok(HashMap::default()),
         };
 
         let file = std::fs::OpenOptions::new()
             .read(true)
-            .open(account_balances_file_path)?;
+            .open(account_states_file_path)?;
 
         let raw_value: serde_json::Value = serde_json::from_reader(&file)?;
-        let balances = match raw_value.as_array() {
-            Some(a) => a,
-            None => {
-                return Err(Error::InvalidAccountBalanceData(raw_value.to_string()));
+        match raw_value {
+            serde_json::Value::Object(states) => {
+                Ok(states
+                    .into_iter()
+                    .fold(HashMap::default(), |mut states, (address, state)| {
+                        let address = match Address::from_str(utils::clean_0x(&address)) {
+                            Ok(addr) => addr,
+                            Err(_) => {
+                                println!("invalid ethereum address: {}", address);
+                                warn!("invalid ethereum address: {}", address);
+                                return states;
+                            }
+                        };
+
+                        states.insert(address, AccountState::from_json_value(&state));
+                        states
+                    }))
             }
-        };
-
-        Ok(balances
-            .iter()
-            .fold(HashMap::default(), |mut balances, account| {
-                let account = match account.as_object() {
-                    Some(acc) => acc,
-                    None => return balances,
-                };
-
-                let address = match account["address"].as_str() {
-                    Some(a) => match Address::from_str(utils::clean_0x(a)) {
-                        Ok(a) => a,
-                        Err(_) => {
-                            println!("invalid ethereum address: {}", a);
-                            warn!("invalid ethereum address: {}", a);
-                            return balances;
-                        }
-                    },
-                    None => return balances,
-                };
-                let balance = match account["balance"].as_str() {
-                    Some(b) => match U256::from_dec_str(b) {
-                        Ok(b) => b,
-                        Err(_) => {
-                            println!("invalid balance value: {}", b);
-                            warn!("invalid balance value: {}", b);
-                            return balances;
-                        }
-                    },
-                    None => return balances,
-                };
-                balances.insert(address, balance);
-                balances
-            }))
+            _ => Err(Error::InvalidAccountStateData(raw_value.to_string())),
+        }
     }
 
     pub fn from_env() -> Result<EthereumChainSpec, Error> {
@@ -140,7 +119,7 @@ impl EthereumChainSpec {
             }
         };
 
-        let mut account_balances = Self::account_balances_from_env()?;
+        let mut account_states = Self::account_states_from_env()?;
 
         let consensus_engine = {
             use serde_json::Value as JsonValue;
@@ -176,8 +155,13 @@ impl EthereumChainSpec {
 
                     let validators = Self::validators_from_env()?;
                     for validator_address in validators.iter() {
-                        account_balances
-                            .insert(validator_address.clone(), sealer_intrinsic_balance);
+                        account_states.insert(
+                            validator_address.clone(),
+                            AccountState {
+                                balance: Some(sealer_intrinsic_balance),
+                                ..Default::default()
+                            },
+                        );
                     }
 
                     ConsensusEngine::ParityAura {
@@ -212,8 +196,13 @@ impl EthereumChainSpec {
 
                     let validators = Self::validators_from_env()?;
                     for validator_address in validators.iter() {
-                        account_balances
-                            .insert(validator_address.clone(), sealer_intrinsic_balance);
+                        account_states.insert(
+                            validator_address.clone(),
+                            AccountState {
+                                balance: Some(sealer_intrinsic_balance),
+                                ..Default::default()
+                            },
+                        );
                     }
 
                     ConsensusEngine::ParityTendermint {
@@ -238,8 +227,13 @@ impl EthereumChainSpec {
 
                     let validators = Self::validators_from_env()?;
                     for validator_address in validators.iter() {
-                        account_balances
-                            .insert(validator_address.clone(), sealer_intrinsic_balance);
+                        account_states.insert(
+                            validator_address.clone(),
+                            AccountState {
+                                balance: Some(sealer_intrinsic_balance),
+                                ..Default::default()
+                            },
+                        );
                     }
 
                     ConsensusEngine::GethClique {
@@ -260,7 +254,7 @@ impl EthereumChainSpec {
             min_gas_limit,
             genesis_block_gas_limit,
             consensus_engine,
-            account_balances,
+            account_states,
         })
     }
 
@@ -407,21 +401,20 @@ impl EthereumChainSpec {
             }
         });
 
-        // insert account balances
-        let spec_accounts = spec["accounts"]
-            .as_object_mut()
-            .expect("accounts is an object; qed");
-        for (address, balance) in &self.account_balances {
-            let address = to_0xhex(address);
-            let balance = format!("{}", balance);
-            spec_accounts
-                .entry(address)
-                .or_insert(json!({ "balance": balance }))
-                .as_object_mut()
-                .expect("account is an object; qed")
-                .insert("balance".to_owned(), balance.into());
-        }
-
+        // insert account states
+        spec["accounts"] =
+            self.account_states
+                .iter()
+                .fold(json!({}), |mut spec_accounts, (address, state)| {
+                    let address = to_0xhex(address);
+                    let state =
+                        serde_json::to_value(&state).expect("AccountState is serializable; qed");
+                    spec_accounts
+                        .as_object_mut()
+                        .expect("spec_accounts is an object; qed")
+                        .insert(address, state);
+                    spec_accounts
+                });
         spec
     }
 }

@@ -32,8 +32,8 @@ pub enum Error {
     #[fail(display = "Invalid minimum gas limit value: {}", _0)]
     InvalidMinimumGasLimitValue(String),
 
-    #[fail(display = "Invalid account balance data: {}", _0)]
-    InvalidAccountBalanceData(String),
+    #[fail(display = "Invalid account state data: {}", _0)]
+    InvalidAccountStateData(String),
 
     #[fail(
         display = "Failed to generate private key from seed {:?} and path {}",

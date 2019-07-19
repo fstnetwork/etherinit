@@ -1,6 +1,7 @@
 use ethsign::SecretKey;
 use std::str::FromStr;
 
+mod account_state;
 mod consensus_engine;
 mod enode_url;
 mod error;
@@ -8,6 +9,7 @@ mod ethereum_chainspec;
 mod node_info;
 mod node_role;
 
+pub use self::account_state::AccountState;
 pub use self::consensus_engine::ConsensusEngine;
 pub use self::enode_url::{Error as EthereumNodeUrlError, EthereumNodeUrl};
 pub use self::error::Error;
