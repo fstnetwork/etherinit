@@ -1,6 +1,7 @@
 use ethereum_types::U256;
 use std::collections::BTreeMap;
-use std::str::FromStr;
+
+use crate::utils;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 // #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -28,27 +29,19 @@ impl AccountState {
     pub fn from_json_value(state: &serde_json::Value) -> AccountState {
         let constructor = state["constructor"].as_str().map(String::from);
         let code = state["code"].as_str().map(String::from);
-        let balance = try_decode_number(&state["balance"]);
-        let nonce = try_decode_number(&state["nonce"]);
-        let version = try_decode_number(&state["version"]);
+        let balance = utils::maybe_u256_from_json_value(&state["balance"]);
+        let nonce = utils::maybe_u256_from_json_value(&state["nonce"]);
+        let version = utils::maybe_u256_from_json_value(&state["version"]);
         let storage = match state["storage"] {
             serde_json::Value::Object(ref map) => Some(map.iter().fold(
                 BTreeMap::default(),
                 |mut map, (key, value)| {
-                    let key = match if key.starts_with("0x") {
-                        U256::from_str(&key[2..]).ok()
-                    } else {
-                        U256::from_dec_str(key).ok()
-                    } {
-                        Some(key) => key,
-                        None => return map,
-                    };
-                    let value = match try_decode_number(value) {
-                        Some(v) => v,
-                        None => return map,
-                    };
-
-                    map.insert(key, value);
+                    if let (Some(key), Some(value)) = (
+                        utils::maybe_u256(key),
+                        utils::maybe_u256_from_json_value(value),
+                    ) {
+                        map.insert(key, value);
+                    }
                     map
                 },
             )),
@@ -63,16 +56,5 @@ impl AccountState {
             code,
             storage,
         }
-    }
-}
-
-fn try_decode_number(value: &serde_json::Value) -> Option<U256> {
-    match value {
-        serde_json::Value::String(value) => match value {
-            value if value.starts_with("0x") => U256::from_str(&value[2..]).ok(),
-            value => U256::from_dec_str(value).ok(),
-        },
-        serde_json::Value::Number(n) => n.as_u64().map(U256::from),
-        _ => None,
     }
 }

@@ -12,6 +12,7 @@ use super::error::Error;
 use super::{generate_keypair_with_index, AccountState, ConsensusEngine};
 
 lazy_static! {
+    static ref DEFAULT_BLOCK_REWARD: U256 = U256::from(5) * U256::from(10).pow(18.into());
     static ref PARITY_DEFAULT_SEAL: serde_json::Value = json!({
         "authorityRound": {
             "step": "0x0",
@@ -105,17 +106,17 @@ impl EthereumChainSpec {
 
         let genesis_block_gas_limit = {
             let raw_value = from_env("GENESIS_BLOCK_GAS_LIMIT")?;
-            match U256::from_str(utils::clean_0x(raw_value.as_str())) {
-                Ok(v) => v,
-                Err(_) => return Err(Error::InvalidGasLimitValue(raw_value)),
+            match utils::maybe_u256(&raw_value) {
+                Some(v) => v,
+                None => return Err(Error::InvalidGasLimitValue(raw_value)),
             }
         };
 
         let min_gas_limit = {
-            let raw_value = from_env("MIN_GAS_LIMIT").unwrap_or_else(|_| "0x1388".to_string());
-            match U256::from_str(utils::clean_0x(raw_value.as_str())) {
-                Ok(v) => v,
-                Err(_) => return Err(Error::InvalidMinimumGasLimitValue(raw_value)),
+            let raw_value = from_env("MIN_GAS_LIMIT").unwrap_or("0x1388".to_owned());
+            match utils::maybe_u256(&raw_value) {
+                Some(v) => v,
+                None => return Err(Error::InvalidMinimumGasLimitValue(raw_value)),
             }
         };
 
@@ -123,35 +124,29 @@ impl EthereumChainSpec {
 
         let consensus_engine = {
             use serde_json::Value as JsonValue;
-            let sealer_intrinsic_balance = U256::from_dec_str(
-                from_env("SEALER_INTRINSIC_BALANCE")
-                    .unwrap_or_else(|_| "0".into())
-                    .as_str(),
-            )
-            .unwrap_or_default();
+
+            let sealer_intrinsic_balance =
+                utils::maybe_u256(&from_env("SEALER_INTRINSIC_BALANCE").unwrap_or("0".to_owned()))
+                    .unwrap_or_default();
 
             let engine = from_env("CONSENSUS_ENGINE")?;
             match engine.to_lowercase().as_ref() {
                 "ethash" => {
                     let engine_parameters: JsonValue =
                         serde_json::from_str(from_env("ETHASH_CONSENSUS_PARAMETERS")?.as_str())?;
-                    let genesis_difficulty: U256 = engine_parameters["genesisBlockDifficulty"]
-                        .as_u64()
-                        .unwrap_or(16384)
-                        .into();
+                    let genesis_difficulty = utils::maybe_u256_from_json_value(
+                        &engine_parameters["genesisBlockDifficulty"],
+                    )
+                    .unwrap_or(U256::from(16384));
                     ConsensusEngine::Ethash { genesis_difficulty }
                 }
                 "aura" => {
                     let engine_parameters: JsonValue =
                         serde_json::from_str(from_env("AURA_CONSENSUS_PARAMETERS")?.as_str())?;
                     let block_period = engine_parameters["blockPeriod"].as_u64().unwrap_or(7);
-
-                    let block_reward = U256::from_dec_str(
-                        engine_parameters["blockReward"]
-                            .as_str()
-                            .unwrap_or_else(|| "5000000000000000000"),
-                    )
-                    .unwrap_or(U256::from(5) * U256::from(10).pow(18.into()));
+                    let block_reward =
+                        utils::maybe_u256_from_json_value(&engine_parameters["blockReward"])
+                            .unwrap_or(DEFAULT_BLOCK_REWARD.clone());
 
                     let validators = Self::validators_from_env()?;
                     for validator_address in validators.iter() {
@@ -187,12 +182,9 @@ impl EthereumChainSpec {
                     let commit_timeout =
                         engine_parameters["commitTimeout"].as_u64().unwrap_or(10000);
 
-                    let block_reward = U256::from_dec_str(
-                        engine_parameters["blockReward"]
-                            .as_str()
-                            .unwrap_or_else(|| "5000000000000000000"),
-                    )
-                    .unwrap_or(U256::from(5) * U256::from(10).pow(18.into()));
+                    let block_reward =
+                        utils::maybe_u256_from_json_value(&engine_parameters["blockReward"])
+                            .unwrap_or(DEFAULT_BLOCK_REWARD.clone());
 
                     let validators = Self::validators_from_env()?;
                     for validator_address in validators.iter() {
@@ -218,12 +210,9 @@ impl EthereumChainSpec {
                     let engine_parameters: JsonValue =
                         serde_json::from_str(from_env("CLIQUE_CONSENSUS_PARAMETERS")?.as_str())?;
                     let block_period = engine_parameters["blockPeriod"].as_u64().unwrap_or(7);
-                    let block_reward = U256::from_dec_str(
-                        engine_parameters["blockReward"]
-                            .as_str()
-                            .unwrap_or_else(|| "5000000000000000000"),
-                    )
-                    .unwrap_or(U256::from(5) * U256::from(10).pow(18.into()));
+                    let block_reward =
+                        utils::maybe_u256_from_json_value(&engine_parameters["blockReward"])
+                            .unwrap_or(DEFAULT_BLOCK_REWARD.clone());
 
                     let validators = Self::validators_from_env()?;
                     for validator_address in validators.iter() {
@@ -250,7 +239,7 @@ impl EthereumChainSpec {
 
         Ok(EthereumChainSpec {
             name,
-            network_id: U256::from(0x2323),
+            network_id: U256::from(0xab23),
             min_gas_limit,
             genesis_block_gas_limit,
             consensus_engine,
@@ -315,15 +304,14 @@ impl EthereumChainSpec {
             "name": self.name,
             "genesis": {
                 "difficulty": "0x1",
-                "gasLimit": to_0xhex(&self.genesis_block_gas_limit),
+                "gasLimit": utils::to_0xhex(&self.genesis_block_gas_limit),
                 "seal": seal
             } ,
             "params": {
                 "maximumExtraDataSize": "0x20",
-                "minGasLimit": to_0xhex(&self.min_gas_limit),
+                "minGasLimit": utils::to_0xhex(&self.min_gas_limit),
                 "gasLimitBoundDivisor": "0x400",
-                "networkID": to_0xhex(&self.network_id),
-                "eip155Transition": 0,
+                "networkID": utils::to_0xhex(&self.network_id),
                 "maxCodeSize": 24576,
                 "maxCodeSizeTransition": 0,
                 "maxTransactionSize": usize::max_value(),
@@ -406,7 +394,7 @@ impl EthereumChainSpec {
             self.account_states
                 .iter()
                 .fold(json!({}), |mut spec_accounts, (address, state)| {
-                    let address = to_0xhex(address);
+                    let address = utils::to_0xhex(address);
                     let state =
                         serde_json::to_value(&state).expect("AccountState is serializable; qed");
                     spec_accounts
@@ -436,8 +424,4 @@ pub fn keypair_from_sealer_mnemonic(
     }
 
     Ok(keypairs)
-}
-
-fn to_0xhex<V: std::fmt::LowerHex>(value: &V) -> String {
-    format!("0x{:x}", value)
 }
