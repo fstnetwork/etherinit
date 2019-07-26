@@ -260,10 +260,7 @@ impl EthereumLauncher {
         match self.program {
             EthereumProgram::Parity => (
                 Command::new(PARITY_EXECUTABLE_PATH),
-                vec![
-                    format!("--config={}", config_file_path),
-                    "--no-hardware-wallets".into(),
-                ],
+                vec![format!("--config={}", config_file_path)],
             ),
             EthereumProgram::GoEthereum => (Command::new(GETH_EXECUTABLE_PATH), vec![]),
         }

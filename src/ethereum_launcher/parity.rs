@@ -145,9 +145,7 @@ impl ParityConfig {
             // logging options for miner
             (None, Some(_)) => "network=info,miner=info,mode=info".to_owned(),
             // logging options for transactor
-            (None, None) => {
-                "txqueue=debug,own_tx=debug,network=info,miner=info,mode=info".to_owned()
-            }
+            (None, None) => "own_tx=warn,network=info,miner=info,mode=info".to_owned(),
         };
 
         let (http_apis, ws_apis) = {
@@ -214,6 +212,7 @@ impl ParityConfig {
                     identity = identity
                     no_persistent_txqueue = false
                     no_download = true
+                    auto_update = "none"
                     light = false
 
                     [network]
@@ -229,6 +228,9 @@ impl ParityConfig {
                     [account]
                     unlock = [ unlock ]
                     password = [ password ]
+
+                    [secretstore]
+                    disable = true
 
                     [mining]
                     author = author
@@ -280,6 +282,7 @@ impl ParityConfig {
                     no_persistent_txqueue = false
                     no_download = true
                     light = false
+                    auto_update = "none"
 
                     [network]
                     bootnodes = bootnodes
@@ -302,6 +305,9 @@ impl ParityConfig {
                     hosts = ["all"]
                     apis = ws_apis
                     origins = ["all"]
+
+                    [secretstore]
+                    disable = true
 
                     [rpc]
                     interface = "0.0.0.0"
