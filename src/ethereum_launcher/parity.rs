@@ -313,6 +313,7 @@ impl ParityConfig {
                     interface = "0.0.0.0"
                     port = http_jsonrpc_port
                     hosts = ["all"]
+                    cors = ["all"]
                     apis = http_apis
                     max_payload = 128
 
