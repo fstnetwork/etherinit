@@ -19,6 +19,7 @@ export PARITY_TX_QUEUE_SIZE=4096
 export PARITY_TX_QUEUE_MEM_LIMIT=7
 export PARITY_TX_QUEUE_PER_SENDER=12
 
+export ETHEREUM_PROGRAM="parity"
 export RUNNING_MODE="development"
 
 export CONSENSUS_ENGINE="Aura"
@@ -40,8 +41,7 @@ cat >$ACCOUNT_STATES_FILE <<EOF
 {
   "0x0000000000000000000000000000000000000094": {
     "balance": "1232343891813242341",
-    "nonce": 3,
-    "constructor": "0011223344556677889900aabbccddeeff"
+    "nonce": 3
   },
   "0x0053f97dc01ce07602b208f844b35e8484acf69f": {
     "balance": "8908974907345139",
@@ -84,16 +84,17 @@ for ((i = 0; i < $MINER_COUNT; i++)); do
 
   export CHAIN_DATA_ROOT="$ROOT_PREFIX/miner-$MINER_INDEX/chain-data"
   export CONFIG_ROOT="$ROOT_PREFIX/miner-$MINER_INDEX"
-  export XDG_CONFIG_HOME=$CONFIG_ROOT/config
-  export XDG_DATA_HOME=$CONFIG_ROOT/data
-  export HOME=$CONFIG_ROOT
+  export IPC_PATH="$CONFIG_ROOT/miner-$i.ipc"
+  export BASE_PATH="$CONFIG_ROOT/base"
 
-  echo $i $CONFIG_ROOT $HOME
+  echo $i $CONFIG_ROOT
 
   rm -v -rf $CONFIG_ROOT/first-run-lock
   rm -v -rf $CONFIG_ROOT/parity-config
 
-  RUST_LOG=info ./target/debug/etherinit run-ethereum &
+  RUST_LOG=info ./target/debug/etherinit run-ethereum init
+  parity --config=$CONFIG_ROOT/config.toml &
+  IPC_PATH="$CONFIG_ROOT/miner-$i.ipc" ./target/debug/etherinit run-network-keeper &
 done
 
 for ((i = 0; i < $TRANSACTOR_COUNT; i++)); do
@@ -106,9 +107,7 @@ for ((i = 0; i < $TRANSACTOR_COUNT; i++)); do
 
   export CHAIN_DATA_ROOT="$ROOT_PREFIX/transactor-$TRANSACTOR_INDEX/chain-data"
   export CONFIG_ROOT="$ROOT_PREFIX/transactor-$TRANSACTOR_INDEX"
-  export XDG_CONFIG_HOME=$CONFIG_ROOT/config
-  export XDG_DATA_HOME=$CONFIG_ROOT/data
-  export HOME=$CONFIG_ROOT
+  export BASE_PATH="$CONFIG_ROOT/base"
 
   echo $i $CONFIG_ROOT $HOME
 
@@ -116,7 +115,7 @@ for ((i = 0; i < $TRANSACTOR_COUNT; i++)); do
   rm -v -rf $CONFIG_ROOT/parity-config
 
   export PARITY_LOGGING=""
-  RUST_LOG=info ./target/debug/etherinit run-ethereum &
+  RUST_LOG=info ./target/debug/etherinit run-ethereum full &
 done
 
 for ((i = 0; i < $SYNCER_COUNT; i++)); do
@@ -129,9 +128,7 @@ for ((i = 0; i < $SYNCER_COUNT; i++)); do
 
   export CHAIN_DATA_ROOT="$ROOT_PREFIX/syncer-$SYNCER_INDEX/chain-data"
   export CONFIG_ROOT="$ROOT_PREFIX/syncer-$SYNCER_INDEX"
-  export XDG_CONFIG_HOME=$CONFIG_ROOT/config
-  export XDG_DATA_HOME=$CONFIG_ROOT/data
-  export HOME=$CONFIG_ROOT
+  export BASE_PATH="$CONFIG_ROOT/base"
 
   echo $i $CONFIG_ROOT $HOME
 
@@ -139,7 +136,7 @@ for ((i = 0; i < $SYNCER_COUNT; i++)); do
   rm -v -rf $CONFIG_ROOT/parity-config
 
   export PARITY_LOGGING=""
-  RUST_LOG=info ./target/debug/etherinit run-ethereum &
+  RUST_LOG=info ./target/debug/etherinit run-ethereum full &
 done
 
 while true; do

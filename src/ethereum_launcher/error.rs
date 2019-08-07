@@ -14,6 +14,9 @@ pub enum Error {
 
     #[fail(display = "Primitives error: {}", _0)]
     Primitives(crate::primitives::Error),
+
+    #[fail(display = "Failed to import key file")]
+    FailedToImportKeyFile,
 }
 
 impl From<std::io::Error> for Error {

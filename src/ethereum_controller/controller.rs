@@ -51,6 +51,14 @@ impl Controller {
             sender.send(()).expect("receiver always exists");
         }
     }
+
+    pub fn unix_exec(self) -> i32 {
+        error!(
+            "Failed to execute Ethereum process. Error: {}",
+            self.ethereum_launcher.unix_exec()
+        );
+        -1
+    }
 }
 
 impl Future for Controller {

@@ -1,4 +1,5 @@
 use futures::{Async, Future, IntoFuture, Poll, Stream};
+use std::path::PathBuf;
 use std::time::Duration;
 use tokio::runtime::Runtime;
 use tokio_signal::unix as UnixSignal;
@@ -179,96 +180,143 @@ pub fn fetch_initial_data(
     Box::new(system_info.join3(chainspec, nodes).into_future())
 }
 
-pub fn execute() -> i32 {
-    env_logger::init();
+struct Payload {
+    runtime: Runtime,
+    context: Context,
+    ethereum_controller: EthereumController,
+    ethereum_program: EthereumProgram,
+    ethereum_node_endpoint: PathBuf,
+}
 
-    let ctx = match Context::from_system() {
-        Ok(ctx) => {
-            info!("Context: {:?}", ctx);
-            ctx
-        }
-        Err(err) => {
-            error!("{:?}", err);
-            return -1;
-        }
-    };
-
-    let mut runtime = match Runtime::new() {
-        Ok(runtime) => runtime,
-        Err(err) => {
-            error!("{:?}", err);
-            return -1;
-        }
-    };
-
-    let (ethereum_program, chainspec, static_nodes) = {
-        let client =
-            BootnodeClient::new(ctx.bootnode_service_host.clone(), ctx.bootnode_service_port);
-
-        match runtime.block_on(fetch_initial_data(&ctx, client)) {
-            Ok(data) => data,
+impl Payload {
+    fn new() -> Option<Payload> {
+        let mut runtime = match Runtime::new() {
+            Ok(runtime) => runtime,
             Err(err) => {
-                error!("Failed to fetch initialization data, error: {}", err);
-                return -1;
+                error!("{:?}", err);
+                return None;
             }
-        }
-    };
+        };
 
-    let (ethereum_controller, ethereum_node_endpoint) = {
+        let context = match Context::from_system() {
+            Ok(context) => {
+                info!("Context: {:?}", context);
+                context
+            }
+            Err(err) => {
+                error!("{:?}", err);
+                return None;
+            }
+        };
+
+        let (ethereum_program, chainspec, static_nodes) = {
+            let client = BootnodeClient::new(
+                context.bootnode_service_host.clone(),
+                context.bootnode_service_port,
+            );
+
+            match runtime.block_on(fetch_initial_data(&context, client)) {
+                Ok(data) => data,
+                Err(err) => {
+                    error!("Failed to fetch initialization data, error: {}", err);
+                    return None;
+                }
+            }
+        };
+
         let launcher = EthereumLauncher {
             program: ethereum_program,
             chainspec,
 
-            running_mode: ctx.running_mode,
+            running_mode: context.running_mode,
 
-            node_role: ctx.node_role.clone(),
+            node_role: context.node_role.clone(),
             bootnodes: static_nodes,
 
-            network_port: ctx.network_port,
-            http_jsonrpc_port: ctx.http_jsonrpc_port,
-            websocket_jsonrpc_port: ctx.websocket_jsonrpc_port,
+            network_port: context.network_port,
+            http_jsonrpc_port: context.http_jsonrpc_port,
+            websocket_jsonrpc_port: context.websocket_jsonrpc_port,
+            ipc_path: context.ipc_path.clone(),
 
-            parity_tx_mem_limit: ctx.parity_tx_queue_mem_limit,
-            parity_tx_queue_size: ctx.parity_tx_queue_size,
-            parity_tx_queue_per_sender: ctx.parity_tx_queue_per_sender,
+            config_file_path: context.config_file_path.clone(),
 
-            parity_logging: ctx.parity_logging,
+            parity_tx_mem_limit: context.parity_tx_queue_mem_limit,
+            parity_tx_queue_size: context.parity_tx_queue_size,
+            parity_tx_queue_per_sender: context.parity_tx_queue_per_sender,
+
+            parity_logging: context.parity_logging.clone(),
         };
 
         match launcher.initialize() {
             Ok(_) => {}
             Err(err) => {
                 error!("Failed to initial launcher, error: {:?}", err);
-                return -1;
+                return None;
             }
         }
 
         let ipc_path = launcher.ipc_path();
-        (
-            EthereumController::new(launcher, ctx.restart_policy),
-            ipc_path,
-        )
+        let restart_policy = context.restart_policy.clone();
+        Some(Payload {
+            runtime,
+            context,
+            ethereum_controller: EthereumController::new(launcher, restart_policy),
+            ethereum_program,
+            ethereum_node_endpoint: ipc_path,
+        })
+    }
+}
+
+pub fn run_init() -> i32 {
+    env_logger::init();
+
+    Payload::new().map(|_| 0).unwrap_or(-1)
+}
+
+pub fn run_exec() -> i32 {
+    env_logger::init();
+
+    Payload::new()
+        .map(|payload| payload.ethereum_controller.unix_exec())
+        .unwrap_or(-1)
+}
+
+pub fn run_full() -> i32 {
+    env_logger::init();
+
+    let Payload {
+        mut runtime,
+        context,
+        ethereum_controller,
+        ethereum_program,
+        ethereum_node_endpoint,
+    } = match Payload::new() {
+        Some(payload) => payload,
+        None => return -1,
     };
 
     let network_keeper = NetworkKeeper::new(
-        ctx.network_name,
+        context.network_name,
         ethereum_program,
-        ctx.bootnode_service_host,
-        ctx.bootnode_service_port,
+        context.bootnode_service_host,
+        context.bootnode_service_port,
         &ethereum_node_endpoint,
-        Some(ctx.http_jsonrpc_port),
-        Some(ctx.websocket_jsonrpc_port),
+        Some(context.http_jsonrpc_port),
+        Some(context.websocket_jsonrpc_port),
     );
 
-    match runtime.block_on(EthereumService::new(
+    let ethereum_service = EthereumService::new(
         ethereum_controller,
         network_keeper,
-        ctx.bootnode_update_interval,
-    )) {
-        Ok(_) => 0,
-        Err(err) => {
+        context.bootnode_update_interval,
+    );
+
+    runtime
+        .block_on(ethereum_service)
+        .map(|_| 0)
+        .map_err(|err| {
             error!("{:?}", err);
             -1
-        }
-    }
+        })
+        .unwrap()
 }

@@ -5,11 +5,10 @@ authors = ["fstnetwork <admin@fstk.io>"]
 edition = "2018"
 
 [dependencies]
-clap = "2.32"
 env_logger = "0.6"
 ethereum-types = "0.5"
 ethsign = { git = "https://github.com/fstnetwork/ethsign", tag = "v0.5.1", features = [ "pure-rust" ] }
-failure = "0.1.5"
+failure = "0.1"
 futures = "0.1"
 hdwallet = { git = "https://github.com/fstnetwork/hdwallet-rs", tag = "v0.1.0" }
 hyper = "0.12"
@@ -19,6 +18,8 @@ parking_lot = "0.7"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
+simple-logging = "2.0"
+structopt = "0.2"
 tokio = "0.1.17"
 tokio-process = "0.2"
 tokio-signal = "0.2"

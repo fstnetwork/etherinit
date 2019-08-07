@@ -45,6 +45,7 @@ pub struct EthereumLauncher {
     pub program: EthereumProgram,
     pub chainspec: JsonValue,
 
+    pub config_file_path: Option<String>,
     pub running_mode: RunningMode,
 
     pub node_role: NodeRole,
@@ -54,6 +55,8 @@ pub struct EthereumLauncher {
     pub http_jsonrpc_port: u16,
     pub websocket_jsonrpc_port: u16,
 
+    pub ipc_path: Option<String>,
+
     pub parity_tx_queue_size: Option<u32>,
     pub parity_tx_mem_limit: Option<u32>,
     pub parity_tx_queue_per_sender: Option<u32>,
@@ -62,17 +65,16 @@ pub struct EthereumLauncher {
 }
 
 impl EthereumLauncher {
+    pub fn base_dir_path(&self) -> PathBuf {
+        PathBuf::from(std::env::var("BASE_PATH").unwrap_or_else(|_| "/base".into()))
+    }
+
     pub fn chain_data_dir_path(&self) -> PathBuf {
         PathBuf::from(std::env::var("CHAIN_DATA_ROOT").unwrap_or_else(|_| "/chain-data".into()))
     }
 
     pub fn config_dir_path(&self) -> PathBuf {
-        let mut path = PathBuf::from(std::env::var("CONFIG_ROOT").unwrap_or_else(|_| "/".into()));
-        path.push(match self.program {
-            EthereumProgram::Parity => PathBuf::from("parity-config"),
-            EthereumProgram::GoEthereum => PathBuf::from("geth-config"),
-        });
-        path
+        PathBuf::from(std::env::var("CONFIG_ROOT").unwrap_or_else(|_| "/".into()))
     }
 
     #[allow(unused)]
@@ -86,21 +88,28 @@ impl EthereumLauncher {
     }
 
     pub fn ipc_path(&self) -> PathBuf {
-        let mut path = self.config_dir_path();
-        path.push(match self.program {
-            EthereumProgram::Parity => "parity.ipc",
-            EthereumProgram::GoEthereum => "geth.ipc",
-        });
-        path
+        match &self.ipc_path {
+            Some(ipc_path) => PathBuf::from(ipc_path.clone()),
+            None => {
+                let mut path = self.config_dir_path();
+                path.push(match self.program {
+                    EthereumProgram::Parity => "parity.ipc",
+                    EthereumProgram::GoEthereum => "geth.ipc",
+                });
+                path
+            }
+        }
     }
 
     pub fn config_file_path(&self) -> PathBuf {
-        let mut path_buf = self.config_dir_path();
-        path_buf.push(match self.program {
-            EthereumProgram::Parity => "config.toml",
-            EthereumProgram::GoEthereum => "config.toml",
-        });
-        path_buf
+        match &self.config_file_path {
+            Some(config_file_path) => PathBuf::from(config_file_path),
+            None => {
+                let mut path_buf = self.config_dir_path();
+                path_buf.push("config.toml");
+                path_buf
+            }
+        }
     }
 
     pub fn initialize(&self) -> Result<String, Error> {
@@ -161,6 +170,11 @@ impl EthereumLauncher {
                                 .to_owned(),
                         }),
 
+                        base_path: self
+                            .base_dir_path()
+                            .to_str()
+                            .expect("base directory path")
+                            .to_owned(),
                         db_path: db_path.to_str().expect("db directory path").to_owned(),
                         node_role: self.node_role.clone(),
 
@@ -195,14 +209,19 @@ impl EthereumLauncher {
                         .into()
                 };
 
-                Command::new(PARITY_EXECUTABLE_PATH)
+                if Command::new(PARITY_EXECUTABLE_PATH)
                     .arg(format!("--config={}", config_file_path))
                     .arg("account")
                     .arg("import")
                     .arg(key_dir.to_str().expect("key directory"))
-                    .spawn()?;
-
-                Ok(config_file_path)
+                    .spawn()?
+                    .wait()?
+                    .success()
+                {
+                    Ok(config_file_path)
+                } else {
+                    Err(Error::FailedToImportKeyFile)
+                }
             }
             NodeRole::Transactor | NodeRole::Syncer => {
                 let config_file_path: String = {
@@ -211,6 +230,11 @@ impl EthereumLauncher {
 
                         miner_options: None,
 
+                        base_path: self
+                            .base_dir_path()
+                            .to_str()
+                            .expect("base directory path")
+                            .to_owned(),
                         db_path: db_path.to_str().expect("db directory path").to_owned(),
                         node_role: self.node_role.clone(),
 
@@ -269,5 +293,12 @@ impl EthereumLauncher {
     pub fn execute_async(&self) -> Result<ChildProcess, std::io::Error> {
         let (mut cmd, args) = self.execute_command();
         cmd.args(args).spawn_async()
+    }
+
+    pub fn unix_exec(self) -> std::io::Error {
+        use std::os::unix::process::CommandExt;
+
+        let (mut cmd, args) = self.execute_command();
+        cmd.args(args).exec()
     }
 }

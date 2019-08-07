@@ -113,6 +113,7 @@ pub struct ParityMinerOptions {
 pub struct ParityConfig {
     pub running_mode: RunningMode,
 
+    pub base_path: String,
     pub db_path: String,
     pub node_role: NodeRole,
     pub miner_options: Option<ParityMinerOptions>,
@@ -137,6 +138,7 @@ pub struct ParityConfig {
 
 impl ParityConfig {
     pub fn toml_config(&self) -> toml::Value {
+        let base_path = self.base_path.clone();
         let db_path = self.db_path.clone();
         let chain = self.spec_path.clone();
         let identity = self.identity.clone();
@@ -207,6 +209,7 @@ impl ParityConfig {
             NodeRole::Miner { .. } => {
                 toml! {
                     [parity]
+                    base_path = base_path
                     db_path = db_path
                     chain = chain
                     identity = identity
@@ -276,6 +279,7 @@ impl ParityConfig {
             NodeRole::Transactor | NodeRole::Syncer => {
                 toml! {
                     [parity]
+                    base_path = base_path
                     db_path = db_path
                     chain = chain
                     identity = identity

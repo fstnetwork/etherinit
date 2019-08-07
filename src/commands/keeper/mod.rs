@@ -1,4 +1,5 @@
 use futures::{future, Async, Future, Poll, Stream};
+use log::LevelFilter;
 use std::str::FromStr;
 use std::time::Duration;
 use tokio::runtime::Runtime;
@@ -26,20 +27,20 @@ impl Context {
         let network_name = from_env("NETWORK_NAME")?;
 
         let ethereum_program = EthereumProgram::from_str(from_env("ETHEREUM_PROGRAM")?.as_str())?;
-        let ethereum_node_endpoint = from_env("ETHEREUM_NODE_ENDPOINT")?;
+        let ethereum_node_endpoint = from_env("IPC_PATH")?;
 
         let bootnode_service_host = from_env("BOOTNODE_SERVICE_HOST")?;
         let bootnode_service_port = from_env("BOOTNODE_SERVICE_PORT")?.parse()?;
 
-        let http_jsonrpc_port = match from_env("HTTP_JSON_RPC_PORT") {
-            Ok(port) => port.parse().ok(),
-            Err(_) => None,
-        };
+        let http_jsonrpc_port = from_env("HTTP_JSON_RPC_PORT")
+            .ok()
+            .map(|port| port.parse().ok())
+            .unwrap();
 
-        let ws_jsonrpc_port = match from_env("WEBSOCKET_JSON_RPC_PORT") {
-            Ok(port) => port.parse().ok(),
-            Err(_) => None,
-        };
+        let ws_jsonrpc_port = from_env("WEBSOCKET_JSON_RPC_PORT")
+            .ok()
+            .map(|port| port.parse().ok())
+            .unwrap();
 
         Ok(Context {
             network_name,
@@ -54,7 +55,7 @@ impl Context {
 }
 
 pub fn execute() -> i32 {
-    env_logger::init();
+    simple_logging::log_to_stderr(LevelFilter::Info);
 
     let mut runtime = match Runtime::new() {
         Ok(runtime) => runtime,

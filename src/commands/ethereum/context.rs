@@ -23,6 +23,12 @@ pub struct Context {
     /// restart policy
     pub restart_policy: RestartPolicy,
 
+    /// Configuration file path
+    pub config_file_path: Option<String>,
+
+    /// Ethereum Client IPC path
+    pub ipc_path: Option<String>,
+
     /// Ethereum P2P Network port
     pub network_port: u16,
 
@@ -118,6 +124,10 @@ impl Context {
             network_name,
 
             node_role,
+
+            config_file_path: from_env("CONFIG_FILE_PATH").ok(),
+
+            ipc_path: from_env("IPC_PATH").ok(),
 
             network_port: from_env("P2P_NETWORK_SERVICE_PORT")?.parse()?,
             http_jsonrpc_port: from_env("HTTP_JSON_RPC_PORT")?.parse()?,

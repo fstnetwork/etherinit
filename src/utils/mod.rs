@@ -2,6 +2,7 @@ use ethereum_types::U256;
 use std::str::FromStr;
 
 pub mod env_var;
+pub mod exit_code;
 mod retry_future;
 
 pub use self::retry_future::RetryFuture;
