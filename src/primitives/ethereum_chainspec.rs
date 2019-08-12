@@ -12,6 +12,7 @@ use super::error::Error;
 use super::{generate_keypair_with_index, AccountState, ConsensusEngine};
 
 lazy_static! {
+    static ref DEFAULT_NETWORK_ID: U256 = U256::from(0xab23);
     static ref DEFAULT_BLOCK_REWARD: U256 = U256::from(5) * U256::from(10).pow(18.into());
     static ref PARITY_DEFAULT_SEAL: serde_json::Value = json!({
         "authorityRound": {
@@ -103,6 +104,11 @@ impl EthereumChainSpec {
 
     pub fn from_env() -> Result<EthereumChainSpec, Error> {
         let name = from_env("NETWORK_NAME")?;
+
+        let network_id = utils::maybe_u256(
+            &from_env("NETWORK_ID").unwrap_or(format!("0x{:x}", DEFAULT_NETWORK_ID.clone())),
+        )
+        .unwrap_or(DEFAULT_NETWORK_ID.clone());
 
         let genesis_block_gas_limit = {
             let raw_value = from_env("GENESIS_BLOCK_GAS_LIMIT")?;
@@ -239,7 +245,7 @@ impl EthereumChainSpec {
 
         Ok(EthereumChainSpec {
             name,
-            network_id: U256::from(0xab23),
+            network_id,
             min_gas_limit,
             genesis_block_gas_limit,
             consensus_engine,
